@@ -1,0 +1,11 @@
+--- lilv-static-py3.2-0.21.3+svn5644.orig/wscript
++++ lilv-static-py3.2-0.21.3+svn5644/wscript
+@@ -379,6 +379,8 @@ def build(bld):
+                   includes   = ['..'],
+                   swig_flags = '-c++ -py3 -python -Wall -I.. -llilv -features autodoc=1',
+                   use        = 'liblilv')
++        if bld.env.STATIC_PROGS:
++            obj.lib          = ['lilv-0', 'sratom-0', 'sord-0', 'serd-0', 'dl', 'm']
+         autowaf.use_lib(bld, obj, 'LILV')
+ 
+         bld.install_files('${PYTHONDIR}', 'bindings/lilv.py')
