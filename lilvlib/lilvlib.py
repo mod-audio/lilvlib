@@ -1264,12 +1264,11 @@ def get_plugins_info(bundles):
 
 # ------------------------------------------------------------------------------------------------------------
 
-if __name__ == '__main__':
+def main():
     from sys import argv
     from pprint import pprint
-    #get_plugins_info(argv[1:])
-    #for i in get_plugins_info(argv[1:]): pprint(i)
     for i in get_plugins_info(argv[1:]):
+        #pprint(i)
         warnings = i['warnings'].copy()
 
         if 'plugin brand is missing' in warnings:
@@ -1290,5 +1289,8 @@ if __name__ == '__main__':
             'errors'  : i['errors'],
             'warnings': i['warnings']
         }, width=200)
+
+if __name__ == '__main__':
+    main()
 
 # ------------------------------------------------------------------------------------------------------------
