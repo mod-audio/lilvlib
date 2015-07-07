@@ -963,6 +963,9 @@ def get_plugin_info(world, plugin):
         if "Control" in types or "CV" in types:
             isInteger = "integer" in properties
 
+            if isInteger and "CV" in types:
+                errors.append("port '%s' has integer property and CV type" % portname)
+
             xdefault = lilv.lilv_nodes_get_first(port.get_value(ns_lv2core.default.me))
             xminimum = lilv.lilv_nodes_get_first(port.get_value(ns_lv2core.minimum.me))
             xmaximum = lilv.lilv_nodes_get_first(port.get_value(ns_lv2core.maximum.me))
@@ -1036,10 +1039,12 @@ def get_plugin_info(world, plugin):
                     ranges['maximum'] = 1
                     ranges['default'] = 0
                 else:
-                    ranges['minimum'] = 0.0
+                    ranges['minimum'] = -1.0 if "CV" in types else 0.0
                     ranges['maximum'] = 1.0
                     ranges['default'] = 0.0
-                errors.append("port '%s' is missing value ranges" % portname)
+
+                if "CV" not in types:
+                    errors.append("port '%s' is missing value ranges" % portname)
 
             nodes = port.get_scale_points()
 
@@ -1267,11 +1272,12 @@ def get_plugins_info(bundles):
 
 # ------------------------------------------------------------------------------------------------------------
 
-def main():
+if __name__ == '__main__':
     from sys import argv
     from pprint import pprint
+    #get_plugins_info(argv[1:])
+    #for i in get_plugins_info(argv[1:]): pprint(i)
     for i in get_plugins_info(argv[1:]):
-        #pprint(i)
         warnings = i['warnings'].copy()
 
         if 'plugin brand is missing' in warnings:
@@ -1292,8 +1298,5 @@ def main():
             'errors'  : i['errors'],
             'warnings': i['warnings']
         }, width=200)
-
-if __name__ == '__main__':
-    main()
 
 # ------------------------------------------------------------------------------------------------------------
