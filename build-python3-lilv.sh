@@ -108,10 +108,10 @@ if [ ! -f lv2/build-done ]; then
   python3 ./waf install
 
   # LV2 needs to be installed system-wide as well
-#   python3 ./waf clean
-#   python3 ./waf configure --prefix=/usr --no-plugins
-#   python3 ./waf build
-#   sudo python3 ./waf install
+  python3 ./waf clean
+  python3 ./waf configure --prefix=/usr --no-plugins
+  python3 ./waf build
+  sudo python3 ./waf install
 
   touch build-done
   cd ..
