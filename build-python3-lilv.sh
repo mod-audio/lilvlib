@@ -77,7 +77,7 @@ cd "$BASEDIR"
 # Get code
 
 if [ ! -d lv2 ]; then
-  git clone --depth 1 git://github.com/drobilla/lv2
+  git clone --depth 1 git://github.com/falkTX/lv2
 fi
 
 if [ ! -d serd ]; then
