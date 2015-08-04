@@ -21,12 +21,12 @@ if [ ! -d /usr/lib/lv2/atom.lv2 ]; then
   exit
 fi
 
-if [ -d /usr/lib/lv2/mod.lv2 ]; then
+if [ ! -d /usr/lib/lv2/mod.lv2 ]; then
   echo "/usr/lib/lv2/mod.lv2 directory is missing"
   exit
 fi
 
-if [ -d /usr/lib/lv2/modgui.lv2 ]; then
+if [ ! -d /usr/lib/lv2/modgui.lv2 ]; then
   echo "/usr/lib/lv2/modgui.lv2 directory is missing"
   exit
 fi
