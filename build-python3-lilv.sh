@@ -5,7 +5,7 @@ set -e
 # -------------------------------------------------------------------------------------------
 # Check dependencies
 
-# sudo apt-get install --no-install-recommends debhelper devscripts dpkg-dev git pkg-config python3-all-dev python3-numpy subversion swig
+# sudo apt-get install --no-install-recommends debhelper devscripts dpkg-dev git pkg-config python3-all-dev python3-numpy subversion swig libpcre3-dev
 
 if (which debuild > /dev/null); then true; else
   echo "debuild not found, please install it"
