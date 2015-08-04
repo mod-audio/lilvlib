@@ -86,6 +86,7 @@ fi
 
 if [ ! -d serd ]; then
   svn co http://svn.drobilla.net/serd/trunk serd
+  sed -i "s|Libs: -L\${libdir} -l@LIB_SERD@|Libs: -L\${libdir} -l@LIB_SERD@ -lm|" serd/serd.pc.in
 fi
 
 if [ ! -d sord ]; then
