@@ -26,6 +26,12 @@ override_dh_auto_clean:
 
 override_dh_auto_install:
 	$(WAF) install --destdir=$(CURDIR)/debian/tmp
+	
+	install -d $(CURDIR)/debian/tmp/usr/bin
+	install -m 755 $(CURDIR)/../sord_validate_mod $(CURDIR)/debian/tmp/usr/bin
+
+	install -d $(CURDIR)/debian/tmp/opt/mod/bin
+	install -m 755 $(TMP_PREFIX)/bin/sord_validate $(CURDIR)/debian/tmp/opt/mod/bin
 
 override_dh_strip:
 	# skip

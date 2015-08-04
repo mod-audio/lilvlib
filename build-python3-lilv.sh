@@ -80,6 +80,10 @@ if [ ! -d lv2 ]; then
   git clone --depth 1 git://github.com/falkTX/lv2
 fi
 
+if [ ! -d mod-sdk ]; then
+  git clone --depth 1 git://github.com/moddevices/mod-sdk
+fi
+
 if [ ! -d serd ]; then
   svn co http://svn.drobilla.net/serd/trunk serd
 fi
@@ -112,6 +116,8 @@ if [ ! -f lv2/build-done ]; then
   python3 ./waf configure --prefix=/usr --no-plugins
   python3 ./waf build
   sudo python3 ./waf install
+  sudo cp -r lv2/lv2plug.in/ns/meta /usr/lib/lv2/
+  sudo cp -r ../mod-sdk/*.lv2       /usr/lib/lv2/
 
   touch build-done
   cd ..
@@ -129,7 +135,7 @@ fi
 if [ ! -f sord/build-done ]; then
   cd sord
   patch -p0 -i "$OLDDIR/python3-lilv-pkg/debian/patches/sord-crash-fix.patch"
-  python3 ./waf configure --prefix="$PREFIX" --static --no-shared --no-utils
+  python3 ./waf configure --prefix="$PREFIX" --static --no-shared
   python3 ./waf build
   python3 ./waf install
   touch build-done
