@@ -33,6 +33,9 @@ override_dh_auto_install:
 	install -d $(CURDIR)/debian/tmp/opt/mod/bin
 	install -m 755 $(TMP_PREFIX)/bin/sord_validate $(CURDIR)/debian/tmp/opt/mod/bin
 
+	install -d $(CURDIR)/debian/tmp/opt/mod/lib/lv2
+	cp -r $(TMP_PREFIX)/lib/lv2/* $(CURDIR)/debian/tmp/opt/mod/lib/lv2
+
 override_dh_strip:
 	# skip
 

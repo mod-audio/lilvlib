@@ -1,64 +1,47 @@
 #!/bin/bash
 
+PREFIX=/opt/mod
+LV2DIR=/opt/mod/lib/lv2
+
+if [ ! -d $LV2DIR/meta ]; then
+  echo "$LV2DIR/meta directory is missing"
+  exit
+fi
+
+if [ ! -d $LV2DIR/schemas.lv2 ]; then
+  echo "$LV2DIR/schemas.lv2 directory is missing"
+  exit
+fi
+
+# don't check all lv2 bundles, if atom.lv2 is installed the others should be too
+if [ ! -d $LV2DIR/atom.lv2 ]; then
+  echo "$LV2DIR/atom.lv2 directory is missing"
+  exit
+fi
+
+if [ ! -d $LV2DIR/mod.lv2 ]; then
+  echo "$LV2DIR/mod.lv2 directory is missing"
+  exit
+fi
+
+if [ ! -d $LV2DIR/kx-programs.lv2 ]; then
+  echo "$LV2DIR/kx-programs.lv2 directory is missing"
+  exit
+fi
+
 if [ "$1"x == ""x ]; then
   echo "usage: $0 /path/to/bundle"
   exit
 fi
 
-if [ ! -d /usr/lib/lv2/meta ]; then
-  echo "/usr/lib/lv2/meta directory is missing"
-  exit
-fi
-
-if [ ! -d /usr/lib/lv2/schemas.lv2 ]; then
-  echo "/usr/lib/lv2/schemas.lv2 directory is missing"
-  exit
-fi
-
-# don't check all lv2 bundles, if atom.lv2 is installed the others should be too
-if [ ! -d /usr/lib/lv2/atom.lv2 ]; then
-  echo "/usr/lib/lv2/atom.lv2 directory is missing"
-  exit
-fi
-
-if [ ! -d /usr/lib/lv2/mod.lv2 ]; then
-  echo "/usr/lib/lv2/mod.lv2 directory is missing"
-  exit
-fi
-
-if [ ! -d /usr/lib/lv2/modgui.lv2 ]; then
-  echo "/usr/lib/lv2/modgui.lv2 directory is missing"
-  exit
-fi
-
-if [ -d /usr/lib/lv2/modpedal.lv2 ]; then
-  EXT_MODPEDAL="/usr/lib/lv2/modpedal.lv2"
-fi
-
-if [ -d /usr/lib/lv2/kx-meta ]; then
-  KX_META="/usr/lib/lv2/kx-meta"
-fi
-
-if [ -d /usr/lib/lv2/kx-external-ui.lv2 ]; then
-  KX_EXTUI="/usr/lib/lv2/kx-external-ui.lv2"
-fi
-
-if [ -d /usr/lib/lv2/kx-programs.lv2 ]; then
-  KX_PROGS="/usr/lib/lv2/kx-programs.lv2"
-fi
-
-if [ -d /usr/lib/lv2/kx-rtmempool.lv2 ]; then
-  KX_RTMPL="/usr/lib/lv2/kx-rtmempool.lv2"
-fi
-
-exec /opt/mod/bin/sord_validate $(find \
-  /usr/lib/lv2/meta \
-  /usr/lib/lv2/{atom,buf-size,data-access,dynmanifest,event,instance-access,log,lv2core,midi,morph,options,parameters,patch,port-groups,port-props,presets,resize-port,schemas,state,time,ui,units,urid,uri-map,worker}.lv2 \
-  $EXT_MOD \
-  $EXT_MODGUI \
-  $EXT_MODPEDAL \
-  $KX_META \
-  $KX_EXTUI \
-  $KX_PROGS \
-  $KX_RTMPL \
+exec $PREFIX/bin/sord_validate $(find \
+  $LV2DIR/meta \
+  $LV2DIR/{atom,buf-size,data-access,dynmanifest,event,instance-access,log,lv2core,midi,morph,options,parameters,patch,port-groups,port-props,presets,resize-port,schemas,state,time,ui,units,urid,uri-map,worker}.lv2 \
+  $LV2DIR/mod.lv2 \
+  $LV2DIR/modgui.lv2 \
+  $LV2DIR/modpedal.lv2 \
+  $LV2DIR/kx-meta \
+  $LV2DIR/kx-external-ui.lv2 \
+  $LV2DIR/kx-programs.lv2 \
+  $LV2DIR/kx-rtmempool.lv2 \
   -name '*.ttl') $(find "$@" -name '*.ttl')

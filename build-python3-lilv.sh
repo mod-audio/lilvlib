@@ -77,28 +77,33 @@ cd "$BASEDIR"
 # Get code
 
 if [ ! -d lv2 ]; then
-  git clone --depth 1 git://github.com/falkTX/lv2
+  git clone --depth 1 git://github.com/drobilla/lv2
+  patch -p1 -i "$OLDDIR"/lv2-plugin-is-project.patch
 fi
 
 if [ ! -d mod-sdk ]; then
   git clone --depth 1 git://github.com/moddevices/mod-sdk
 fi
 
+if [ ! -d kxstudio-ext ]; then
+  git clone --depth 1 git://github.com/KXStudio/LV2-Extensions kxstudio-ext
+fi
+
 if [ ! -d serd ]; then
-  svn co http://svn.drobilla.net/serd/trunk serd
+  git clone --depth 1 http://git.drobilla.net/serd.git serd
   sed -i "s|Libs: -L\${libdir} -l@LIB_SERD@|Libs: -L\${libdir} -l@LIB_SERD@ -lm|" serd/serd.pc.in
 fi
 
 if [ ! -d sord ]; then
-  svn co http://svn.drobilla.net/sord/trunk sord
+  git clone --depth 1 http://git.drobilla.net/sord.git sord
 fi
 
 if [ ! -d sratom ]; then
-  svn co http://svn.drobilla.net/lad/trunk/sratom sratom
+  git clone --depth 1 http://git.drobilla.net/sratom.git sratom
 fi
 
 if [ ! -d lilv ]; then
-  svn co http://svn.drobilla.net/lad/trunk/lilv lilv
+  git clone --depth 1 http://git.drobilla.net/lilv.git lilv
 fi
 
 sed -i "s/bld.add_post_fun(autowaf.run_ldconfig)//" */wscript
@@ -111,15 +116,20 @@ if [ ! -f lv2/build-done ]; then
   python3 ./waf configure --prefix="$PREFIX" --no-plugins
   python3 ./waf build
   python3 ./waf install
+  touch build-done
+  cd ..
+fi
 
-  # LV2 needs to be installed system-wide as well
-  python3 ./waf clean
-  python3 ./waf configure --prefix=/usr --no-plugins
-  python3 ./waf build
-  sudo python3 ./waf install
-  sudo cp -r lv2/lv2plug.in/ns/meta /usr/lib/lv2/
-  sudo cp -r ../mod-sdk/*.lv2       /usr/lib/lv2/
+if [ ! -f mod-sdk/build-done ]; then
+  cd mod-sdk
+  cp -r *.lv2 "$PREFIX"/lib/lv2/
+  touch build-done
+  cd ..
+fi
 
+if [ ! -f kxstudio-ext/build-done ]; then
+  cd kxstudio-ext
+  cp -r *.lv2 "$PREFIX"/lib/lv2/
   touch build-done
   cd ..
 fi
@@ -135,7 +145,6 @@ fi
 
 if [ ! -f sord/build-done ]; then
   cd sord
-  patch -p0 -i "$OLDDIR/python3-lilv-pkg/debian/patches/sord-crash-fix.patch"
   python3 ./waf configure --prefix="$PREFIX" --static --no-shared
   python3 ./waf build
   python3 ./waf install

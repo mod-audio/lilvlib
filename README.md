@@ -1,0 +1,26 @@
+## lilvlib
+
+This repository contains a build script for lilvlib and its python3-lilv dependency, using the latest development version from git.
+
+The reason why you need this script is because most distros have an outdated lilv binary, don't build lilv python modules or build the python2 modules instead of our required python3 version.
+
+To start simply run:
+
+`./build-python3-lilv.sh`
+
+If your missing some dependency the script will let you know right at the beginning.
+
+
+The generated package will contain python3-lilv and also everything needed for falkTX's LV2 plugin inquisition.
+This includes:
+
+- LV2 headers and definitions
+- MOD-SDK LV2 definitions
+- KXStudio LV2 definitions
+- sord_validate (static binary)
+- sord_validate_mod
+
+
+The sord_validate_mod is an helper script that runs sord_validate with the correct bundles.
+
+Because it uses the definitions copied during build it does not depend on any external resources.
