@@ -39,9 +39,11 @@ exec $PREFIX/bin/sord_validate $(find \
   $LV2DIR/{atom,buf-size,data-access,dynmanifest,event,instance-access,log,lv2core,midi,morph,options,parameters,patch,port-groups,port-props,presets,resize-port,schemas,state,time,ui,units,urid,uri-map,worker}.lv2 \
   $LV2DIR/mod.lv2 \
   $LV2DIR/modgui.lv2 \
-  $LV2DIR/modpedal.lv2 \
   $LV2DIR/kx-meta \
   $LV2DIR/kx-external-ui.lv2 \
   $LV2DIR/kx-programs.lv2 \
   $LV2DIR/kx-rtmempool.lv2 \
   -name '*.ttl') $(find "$@" -name '*.ttl')
+
+# modpedal.lv2 is NIY
+#   $LV2DIR/modpedal.lv2

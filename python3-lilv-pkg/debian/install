@@ -1,3 +1,4 @@
 /opt/mod/bin/
+/opt/mod/lib/lv2/
 /usr/bin/sord_validate_mod
 /usr/lib/python*/
