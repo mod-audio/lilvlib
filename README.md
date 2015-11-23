@@ -8,7 +8,7 @@ To start simply run:
 
 `./build-python3-lilv.sh`
 
-If your missing some dependency the script will let you know right at the beginning.
+If you're missing some dependency the script will let you know right at the beginning.
 
 
 The generated package will contain python3-lilv and also everything needed for falkTX's LV2 plugin inquisition.
@@ -21,6 +21,6 @@ This includes:
 - sord_validate_mod
 
 
-The sord_validate_mod is an helper script that runs sord_validate with the correct bundles.
+The sord_validate_mod is a helper script that runs sord_validate with the correct bundles.
 
-Because it uses the definitions copied during build it does not depend on any external resources.
+Because this package uses the definitions copied during build it does not depend on any external resources.
