@@ -80,7 +80,7 @@ if [ ! -f lv2/build-done ]; then
   python3 ./waf configure --prefix=/usr/local --no-plugins --copy-headers
   python3 ./waf build
   sudo python3 ./waf install
-  cp -r schemas.lv2 lv2/lv2plug.in/ns/meta /usr/local/lib/lv2/
+  sudo cp -r schemas.lv2 lv2/lv2plug.in/ns/meta /usr/local/lib/lv2/
   touch build-done
   cd ..
 fi
