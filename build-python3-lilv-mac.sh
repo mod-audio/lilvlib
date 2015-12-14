@@ -37,7 +37,7 @@ export PKG_CONFIG_PATH="$PREFIX/lib/pkgconfig"
 export CFLAGS="-fPIC -O0 -g -DDEBUG -I$PREFIX/include -I/usr/local/lib/python3.5/site-packages/numpy/core/include"
 export CXXFLAGS="-fPIC -O0 -g -DDEBUG -I$PREFIX/include -I/usr/local/lib/python3.5/site-packages/numpy/core/include"
 export CPPFLAGS=""
-export LDFLAGS="-ldl -lm"
+export LDFLAGS="-L$PREFIX/lib -ldl -lm"
 
 mkdir -p "$BASEDIR"
 cd "$BASEDIR"
@@ -73,6 +73,8 @@ fi
 
 if [ ! -d lilv ]; then
   git clone http://git.drobilla.net/lilv.git lilv
+  patch -p1 -i "$OLDDIR/python3-lilv-pkg/debian/patches/fix-link.patch"
+  sed -i -e "s/''-static', '-Wl,--start-group'//" wscript
 fi
 
 sed -i -e "s/bld.add_post_fun(autowaf.run_ldconfig)//" */wscript
@@ -133,7 +135,6 @@ fi
 
 if [ ! -f lilv/build-done ]; then
   cd lilv
-#   patch -p1 -i "$OLDDIR/python3-lilv-pkg/debian/patches/fix-link.patch"
   python3 ./waf configure --prefix="$PREFIX" --static --static-progs --no-shared --no-utils
   python3 ./waf build
   python3 ./waf install
@@ -146,8 +147,6 @@ sed -i -e "s/-llilv-0/-llilv-0 -lsratom-0 -lsord-0 -lserd-0 -ldl -lm/" "$PKG_CON
 
 if [ ! -f lilv/py-build-done ]; then
   cd lilv
-  sed -i -e "s/'-static', //" wscript
-  sed -i -e "s/'-Wl,--start-group'//" wscript
   python3 ./waf clean
   python3 ./waf configure --prefix=/usr --static --static-progs --no-shared --bindings
   python3 ./waf build
