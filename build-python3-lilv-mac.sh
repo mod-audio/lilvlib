@@ -30,8 +30,8 @@ fi
 
 export OLDDIR=$(pwd)
 export BASEDIR="/tmp/python3-lilv-build"
-export CFLAGS="-I/usr/local/lib/python3.5/site-packages/numpy/core/include"
-export CXXFLAGS="-I/usr/local/lib/python3.5/site-packages/numpy/core/include"
+export CFLAGS="-I/usr/local/include -I/usr/local/lib/python3.5/site-packages/numpy/core/include"
+export CXXFLAGS="-I/usr/local/include -I/usr/local/lib/python3.5/site-packages/numpy/core/include"
 export CPPFLAGS=""
 export LDFLAGS=""
 
