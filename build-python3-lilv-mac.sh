@@ -150,19 +150,19 @@ if [ ! -f lilv/py-build-done ]; then
   python3 ./waf clean
   python3 ./waf configure --prefix=/usr --static --static-progs --no-shared --bindings
   python3 ./waf build
-  python3 ./waf install --destdir=$(TARGETDIR)
+  python3 ./waf install --destdir="$TARGETDIR"
   touch build-done
   cd ..
 fi
 
-install -d $(TARGETDIR)/usr/local/bin
-install -d $(TARGETDIR)/opt/mod/bin
-install -d $(TARGETDIR)/opt/mod/lib/lv2
+install -d "$TARGETDIR/usr/local/bin"
+install -d "$TARGETDIR/opt/mod/bin"
+install -d "$TARGETDIR/opt/mod/lib/lv2"
 
-install -m 755 $(OLDDIR)/sord_validate_mod $(TARGETDIR)/usr/local/bin
-install -m 755 $(TMP_PREFIX)/bin/sord_validate $(TARGETDIR)/opt/mod/bin
+install -m 755 "$OLDDIR/sord_validate_mod" "$TARGETDIR/usr/local/bin"
+install -m 755 $TMP_PREFIX/bin/sord_validate "$TARGETDIR/opt/mod/bin"
 
-cp -r $(TMP_PREFIX)/lib/lv2/* $(TARGETDIR)/opt/mod/lib/lv2
+cp -r $TMP_PREFIX/lib/lv2/* "$TARGETDIR/opt/mod/lib/lv2"
 
 # -------------------------------------------------------------------------------------------
 # Cleanup
