@@ -147,6 +147,7 @@ sed -i -e "s/-llilv-0/-llilv-0 -lsratom-0 -lsord-0 -lserd-0 -ldl -lm/" "$PKG_CON
 if [ ! -f lilv/py-build-done ]; then
   cd lilv
   sed -i -e "s/'-static', //" wscript
+  sed -i -e "s/'-Wl,--start-group'//" wscript
   python3 ./waf clean
   python3 ./waf configure --prefix=/usr --static --static-progs --no-shared --bindings
   python3 ./waf build
