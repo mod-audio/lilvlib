@@ -30,15 +30,10 @@ fi
 
 export OLDDIR=$(pwd)
 export BASEDIR="/tmp/python3-lilv-build"
-export TARGETDIR="$(pwd)/macos-build"
-export PREFIX="$BASEDIR/system"
-export PKG_CONFIG_PATH="$PREFIX/lib/pkgconfig"
-
-export CFLAGS="-fPIC -O0 -g -DDEBUG -I$PREFIX/include -I/usr/local/lib/python3.5/site-packages/numpy/core/include"
-export CXXFLAGS="-fPIC -O0 -g -DDEBUG -I$PREFIX/include -I/usr/local/lib/python3.5/site-packages/numpy/core/include"
+export CFLAGS="-I/usr/local/lib/python3.5/site-packages/numpy/core/include"
+export CXXFLAGS="-I/usr/local/lib/python3.5/site-packages/numpy/core/include"
 export CPPFLAGS=""
-export LDFLAGS="-L$PREFIX/lib"
-# "-ldl -lm"
+export LDFLAGS=""
 
 mkdir -p "$BASEDIR"
 cd "$BASEDIR"
@@ -61,7 +56,6 @@ fi
 
 if [ ! -d serd ]; then
   git clone http://git.drobilla.net/serd.git serd
-#   sed -i -e "s|Libs: -L\${libdir} -l@LIB_SERD@|Libs: -L\${libdir} -l@LIB_SERD@ -lm|" serd/serd.pc.in
 fi
 
 if [ ! -d sord ]; then
@@ -74,102 +68,81 @@ fi
 
 if [ ! -d lilv ]; then
   git clone http://git.drobilla.net/lilv.git lilv
-#   cd lilv
-#   patch -p1 -i "$OLDDIR/python3-lilv-pkg/debian/patches/fix-link.patch"
-#   sed -i -e "s/'-static', '-Wl,--start-group'//" wscript
-#   cd ..
 fi
 
-sed -i -e "s/bld.add_post_fun(autowaf.run_ldconfig)//" */wscript
+# sed -i -e "s/bld.add_post_fun(autowaf.run_ldconfig)//" */wscript
 
 # -------------------------------------------------------------------------------------------
 # Build dependency code
 
 if [ ! -f lv2/build-done ]; then
   cd lv2
-  python3 ./waf configure --prefix="$PREFIX" --no-plugins --copy-headers
+  python3 ./waf configure --prefix=/usr/local --no-plugins --copy-headers
   python3 ./waf build
-  python3 ./waf install
-  cp -r schemas.lv2 lv2/lv2plug.in/ns/meta "$PREFIX"/lib/lv2/
+  sudo python3 ./waf install
+  cp -r schemas.lv2 lv2/lv2plug.in/ns/meta /usr/local/lib/lv2/
   touch build-done
   cd ..
 fi
 
 if [ ! -f mod-sdk/build-done ]; then
   cd mod-sdk
-  cp -r *.lv2 "$PREFIX"/lib/lv2/
+  sudo cp -r *.lv2 /usr/local/lib/lv2/
   touch build-done
   cd ..
 fi
 
 if [ ! -f kxstudio-ext/build-done ]; then
   cd kxstudio-ext
-  cp -r kx-meta *.lv2 "$PREFIX"/lib/lv2/
+  sudo cp -r kx-meta *.lv2 /usr/local/lib/lv2/
   touch build-done
   cd ..
 fi
 
 if [ ! -f serd/build-done ]; then
   cd serd
-  python3 ./waf configure --prefix="$PREFIX" --no-utils
+  python3 ./waf configure --prefix=/usr/local --no-utils
   python3 ./waf build
-  python3 ./waf install
+  sudo python3 ./waf install
   touch build-done
   cd ..
 fi
 
 if [ ! -f sord/build-done ]; then
   cd sord
-  python3 ./waf configure --prefix="$PREFIX"
+  python3 ./waf configure --prefix=/usr/local
   python3 ./waf build
-  python3 ./waf install
+  sudo python3 ./waf install
   touch build-done
   cd ..
 fi
 
 if [ ! -f sratom/build-done ]; then
   cd sratom
-  python3 ./waf configure --prefix="$PREFIX"
+  python3 ./waf configure --prefix=/usr/local
   python3 ./waf build
-  python3 ./waf install
+  sudo python3 ./waf install
   touch build-done
   cd ..
 fi
 
 if [ ! -f lilv/build-done ]; then
   cd lilv
-  python3 ./waf configure --prefix="$PREFIX" --no-utils
-  python3 ./waf build
-  python3 ./waf install
-  touch build-done
-  cd ..
-fi
-
-# sed -i -e "s/-lserd-0/-lserd-0 -ldl -lm/" "$PKG_CONFIG_PATH"/serd-0.pc
-# sed -i -e "s/-llilv-0/-llilv-0 -lsratom-0 -lsord-0 -lserd-0 -ldl -lm/" "$PKG_CONFIG_PATH"/lilv-0.pc
-
-if [ ! -f lilv/py-build-done ]; then
-  cd lilv
-  python3 ./waf clean
   python3 ./waf configure --prefix=/usr/local --bindings
   python3 ./waf build
-  python3 ./waf install --destdir="$TARGETDIR"
+  sudo python3 ./waf install
   touch build-done
   cd ..
 fi
 
-install -d "$TARGETDIR/usr/local/bin"
-install -d "$TARGETDIR/opt/mod/bin"
-install -d "$TARGETDIR/opt/mod/lib/lv2"
-
-install -m 755 "$OLDDIR"/sord_validate_mod "$TARGETDIR/usr/local/bin"
-install -m 755 $PREFIX/bin/sord_validate "$TARGETDIR/opt/mod/bin"
-
-cp -r $PREFIX/lib/lv2/* "$TARGETDIR/opt/mod/lib/lv2"
+cp "$OLDDIR"/sord_validate_mod sord_validate_lv2
+sed -i -e "s|/opt/mod|/usr/local|" sord_validate_lv2
+sudo install -m 755 sord_validate_lv2 /usr/local/bin
 
 # -------------------------------------------------------------------------------------------
 # Cleanup
 
+cd "$OLDDIR"
 rm -rf "$BASEDIR"
 
 # -------------------------------------------------------------------------------------------
