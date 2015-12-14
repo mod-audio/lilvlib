@@ -110,7 +110,7 @@ fi
 
 if [ ! -f serd/build-done ]; then
   cd serd
-  python3 ./waf configure --prefix="$PREFIX" --static --no-shared --no-utils
+  python3 ./waf configure --prefix="$PREFIX" --no-utils
   python3 ./waf build
   python3 ./waf install
   touch build-done
@@ -119,7 +119,7 @@ fi
 
 if [ ! -f sord/build-done ]; then
   cd sord
-  python3 ./waf configure --prefix="$PREFIX" --static --no-shared
+  python3 ./waf configure --prefix="$PREFIX"
   python3 ./waf build
   python3 ./waf install
   touch build-done
@@ -128,7 +128,7 @@ fi
 
 if [ ! -f sratom/build-done ]; then
   cd sratom
-  python3 ./waf configure --prefix="$PREFIX" --static --no-shared
+  python3 ./waf configure --prefix="$PREFIX"
   python3 ./waf build
   python3 ./waf install
   touch build-done
@@ -137,7 +137,7 @@ fi
 
 if [ ! -f lilv/build-done ]; then
   cd lilv
-  python3 ./waf configure --prefix="$PREFIX" --static --static-progs --no-shared --no-utils
+  python3 ./waf configure --prefix="$PREFIX" --no-utils
   python3 ./waf build
   python3 ./waf install
   touch build-done
@@ -150,7 +150,7 @@ sed -i -e "s/-llilv-0/-llilv-0 -lsratom-0 -lsord-0 -lserd-0 -ldl -lm/" "$PKG_CON
 if [ ! -f lilv/py-build-done ]; then
   cd lilv
   python3 ./waf clean
-  python3 ./waf configure --prefix=/usr/local --static --static-progs --no-shared --bindings
+  python3 ./waf configure --prefix=/usr/local --bindings
   python3 ./waf build
   python3 ./waf install --destdir="$TARGETDIR"
   touch build-done
