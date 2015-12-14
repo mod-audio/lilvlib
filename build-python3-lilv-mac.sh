@@ -135,7 +135,7 @@ fi
 
 if [ ! -f lilv/build-done ]; then
   cd lilv
-  patch -p1 -i "$OLDDIR/debian/patches/fix-link.patch"
+  patch -p1 -i "$OLDDIR/python3-lilv-pkg/debian/patches/fix-link.patch"
   python3 ./waf configure --prefix="$PREFIX" --static --static-progs --no-shared --no-utils
   python3 ./waf build
   python3 ./waf install
