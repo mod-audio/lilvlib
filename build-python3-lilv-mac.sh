@@ -73,8 +73,10 @@ fi
 
 if [ ! -d lilv ]; then
   git clone http://git.drobilla.net/lilv.git lilv
+  cd lilv
   patch -p1 -i "$OLDDIR/python3-lilv-pkg/debian/patches/fix-link.patch"
   sed -i -e "s/''-static', '-Wl,--start-group'//" wscript
+  cd ..
 fi
 
 sed -i -e "s/bld.add_post_fun(autowaf.run_ldconfig)//" */wscript
