@@ -61,7 +61,7 @@ fi
 
 if [ ! -d serd ]; then
   git clone http://git.drobilla.net/serd.git serd
-  sed -i "s|Libs: -L\${libdir} -l@LIB_SERD@|Libs: -L\${libdir} -l@LIB_SERD@ -lm|" serd/serd.pc.in
+  sed -i -e "s|Libs: -L\${libdir} -l@LIB_SERD@|Libs: -L\${libdir} -l@LIB_SERD@ -lm|" serd/serd.pc.in
 fi
 
 if [ ! -d sord ]; then
@@ -76,7 +76,7 @@ if [ ! -d lilv ]; then
   git clone http://git.drobilla.net/lilv.git lilv
 fi
 
-sed -i "s/bld.add_post_fun(autowaf.run_ldconfig)//" */wscript
+sed -i -e "s/bld.add_post_fun(autowaf.run_ldconfig)//" */wscript
 
 # -------------------------------------------------------------------------------------------
 # Build dependency code
@@ -141,8 +141,8 @@ if [ ! -f lilv/build-done ]; then
   cd ..
 fi
 
-sed -i "s/-lserd-0/-lserd-0 -ldl -lm/" "$PKG_CONFIG_PATH"/serd-0.pc
-sed -i "s/-llilv-0/-llilv-0 -lsratom-0 -lsord-0 -lserd-0 -ldl -lm/" "$PKG_CONFIG_PATH"/lilv-0.pc
+sed -i -e "s/-lserd-0/-lserd-0 -ldl -lm/" "$PKG_CONFIG_PATH"/serd-0.pc
+sed -i -e "s/-llilv-0/-llilv-0 -lsratom-0 -lsord-0 -lserd-0 -ldl -lm/" "$PKG_CONFIG_PATH"/lilv-0.pc
 
 rm -rf "$BASEDIR"
 
