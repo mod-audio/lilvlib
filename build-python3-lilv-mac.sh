@@ -36,8 +36,8 @@ export TARGETDIR="$(pwd)/macos-build"
 export PREFIX="$BASEDIR/system"
 export PKG_CONFIG_PATH="$PREFIX/lib/pkgconfig"
 
-export CFLAGS="-fPIC -O0 -g -DDEBUG -I$PREFIX/include"
-export CXXFLAGS="-fPIC -O0 -g -DDEBUG -I$PREFIX/include"
+export CFLAGS="-fPIC -O0 -g -DDEBUG -I$PREFIX/include -I/usr/local/lib/python3.5/site-packages/numpy/core/include"
+export CXXFLAGS="-fPIC -O0 -g -DDEBUG -I$PREFIX/include -I/usr/local/lib/python3.5/site-packages/numpy/core/include"
 export CPPFLAGS=""
 export LDFLAGS="-ldl -lm"
 
