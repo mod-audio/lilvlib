@@ -36,8 +36,8 @@ export TARGETDIR="$(pwd)/macos-build"
 export PREFIX="$BASEDIR/system"
 export PKG_CONFIG_PATH="$PREFIX/lib/pkgconfig"
 
-export CFLAGS="-fPIC -O0 -g -DDEBUG"
-export CXXFLAGS="-fPIC -O0 -g -DDEBUG"
+export CFLAGS="-fPIC -O0 -g -DDEBUG -I$PREFIX/include"
+export CXXFLAGS="-fPIC -O0 -g -DDEBUG -I$PREFIX/include"
 export CPPFLAGS=""
 export LDFLAGS="-ldl -lm"
 
