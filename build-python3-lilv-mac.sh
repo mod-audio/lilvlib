@@ -32,6 +32,7 @@ fi
 
 export OLDDIR=$(pwd)
 export BASEDIR="/tmp/python3-lilv-build"
+export TARGETDIR="$(pwd)/macos-build"
 export PREFIX="$BASEDIR/system"
 export PKG_CONFIG_PATH="$PREFIX/lib/pkgconfig"
 
@@ -134,6 +135,7 @@ fi
 
 if [ ! -f lilv/build-done ]; then
   cd lilv
+  patch -p1 -i "$OLDDIR/debian/patches/fix-link.patch"
   python3 ./waf configure --prefix="$PREFIX" --static --static-progs --no-shared --no-utils
   python3 ./waf build
   python3 ./waf install
@@ -144,28 +146,28 @@ fi
 sed -i -e "s/-lserd-0/-lserd-0 -ldl -lm/" "$PKG_CONFIG_PATH"/serd-0.pc
 sed -i -e "s/-llilv-0/-llilv-0 -lsratom-0 -lsord-0 -lserd-0 -ldl -lm/" "$PKG_CONFIG_PATH"/lilv-0.pc
 
-rm -rf "$BASEDIR"
+if [ ! -f lilv/py-build-done ]; then
+  cd lilv
+  python3 ./waf clean
+  python3 ./waf configure --prefix=/usr --static --static-progs --no-shared --bindings
+  python3 ./waf build
+  python3 ./waf install --destdir=$(TARGETDIR)
+  touch build-done
+  cd ..
+fi
 
-exit 0
+install -d $(TARGETDIR)/usr/local/bin
+install -d $(TARGETDIR)/opt/mod/bin
+install -d $(TARGETDIR)/opt/mod/lib/lv2
 
-# -------------------------------------------------------------------------------------------
-# Build package
+install -m 755 $(OLDDIR)/sord_validate_mod $(TARGETDIR)/usr/local/bin
+install -m 755 $(TMP_PREFIX)/bin/sord_validate $(TARGETDIR)/opt/mod/bin
 
-cd "$OLDDIR/python3-lilv-pkg"
-cp -r "$BASEDIR"/lilv/* .
-patch -p1 -i debian/patches/fix-link.patch
-debuild clean
-debuild binary
-debuild clean
+cp -r $(TMP_PREFIX)/lib/lv2/* $(TARGETDIR)/opt/mod/lib/lv2
 
 # -------------------------------------------------------------------------------------------
 # Cleanup
 
 rm -rf "$BASEDIR"
-
-cd "$OLDDIR/python3-lilv-pkg"
-mv debian ..
-rm -rf *
-mv ../debian .
 
 # -------------------------------------------------------------------------------------------
