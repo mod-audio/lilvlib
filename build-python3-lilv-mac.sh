@@ -37,7 +37,8 @@ export PKG_CONFIG_PATH="$PREFIX/lib/pkgconfig"
 export CFLAGS="-fPIC -O0 -g -DDEBUG -I$PREFIX/include -I/usr/local/lib/python3.5/site-packages/numpy/core/include"
 export CXXFLAGS="-fPIC -O0 -g -DDEBUG -I$PREFIX/include -I/usr/local/lib/python3.5/site-packages/numpy/core/include"
 export CPPFLAGS=""
-export LDFLAGS="-L$PREFIX/lib -ldl -lm"
+export LDFLAGS="-L$PREFIX/lib"
+# "-ldl -lm"
 
 mkdir -p "$BASEDIR"
 cd "$BASEDIR"
@@ -60,7 +61,7 @@ fi
 
 if [ ! -d serd ]; then
   git clone http://git.drobilla.net/serd.git serd
-  sed -i -e "s|Libs: -L\${libdir} -l@LIB_SERD@|Libs: -L\${libdir} -l@LIB_SERD@ -lm|" serd/serd.pc.in
+#   sed -i -e "s|Libs: -L\${libdir} -l@LIB_SERD@|Libs: -L\${libdir} -l@LIB_SERD@ -lm|" serd/serd.pc.in
 fi
 
 if [ ! -d sord ]; then
@@ -73,10 +74,10 @@ fi
 
 if [ ! -d lilv ]; then
   git clone http://git.drobilla.net/lilv.git lilv
-  cd lilv
-  patch -p1 -i "$OLDDIR/python3-lilv-pkg/debian/patches/fix-link.patch"
-  sed -i -e "s/'-static', '-Wl,--start-group'//" wscript
-  cd ..
+#   cd lilv
+#   patch -p1 -i "$OLDDIR/python3-lilv-pkg/debian/patches/fix-link.patch"
+#   sed -i -e "s/'-static', '-Wl,--start-group'//" wscript
+#   cd ..
 fi
 
 sed -i -e "s/bld.add_post_fun(autowaf.run_ldconfig)//" */wscript
@@ -144,8 +145,8 @@ if [ ! -f lilv/build-done ]; then
   cd ..
 fi
 
-sed -i -e "s/-lserd-0/-lserd-0 -ldl -lm/" "$PKG_CONFIG_PATH"/serd-0.pc
-sed -i -e "s/-llilv-0/-llilv-0 -lsratom-0 -lsord-0 -lserd-0 -ldl -lm/" "$PKG_CONFIG_PATH"/lilv-0.pc
+# sed -i -e "s/-lserd-0/-lserd-0 -ldl -lm/" "$PKG_CONFIG_PATH"/serd-0.pc
+# sed -i -e "s/-llilv-0/-llilv-0 -lsratom-0 -lsord-0 -lserd-0 -ldl -lm/" "$PKG_CONFIG_PATH"/lilv-0.pc
 
 if [ ! -f lilv/py-build-done ]; then
   cd lilv
