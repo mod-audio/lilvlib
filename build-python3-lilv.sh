@@ -27,11 +27,6 @@ if (which python3 > /dev/null); then true; else
   exit
 fi
 
-if (which svn > /dev/null); then true; else
-  echo "svn not found, please install it"
-  exit
-fi
-
 if (which swig > /dev/null); then true; else
   echo "swig not found, please install it"
   exit
