@@ -1,5 +1,5 @@
-python3-lilv (0.21.3+svn) stable; urgency=medium
+python3-lilv (4:0.22.1+git20160226) stable; urgency=medium
 
-  * New SVN
+  * Latest git version
 
  -- falkTX <falktx@gmail.com>  Tue, 24 Mar 2015 14:51:36 +0100
