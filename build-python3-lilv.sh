@@ -52,6 +52,11 @@ if (dpkg -l | grep python3-numpy > /dev/null); then true; else
   exit
 fi
 
+if (pkg-config --exists libpcre); then true; else
+  echo "libpcre-dev not installed, please install it"
+  exit
+fi
+
 # -------------------------------------------------------------------------------------------
 # Prepare environment
 
