@@ -2,6 +2,8 @@
 
 export TMP_PREFIX=/tmp/python3-lilv-build/system
 
+export CFLAGS=-I$(TMP_PREFIX)/include
+export CXXFLAGS=-I$(TMP_PREFIX)/include
 export LDFLAGS=-L$(TMP_PREFIX)/lib -ldl -lm
 export PKG_CONFIG_PATH=$(TMP_PREFIX)/lib/pkgconfig
 
