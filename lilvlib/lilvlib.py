@@ -97,7 +97,11 @@ def get_category(nodes):
         if category in category_indexes.keys():
             return category_indexes[category]
         return []
-    return [cat for catlist in LILV_FOREACH(nodes, fill_in_category) for cat in catlist]
+    categories = []
+    for cat in [cat for catlist in LILV_FOREACH(nodes, fill_in_category) for cat in catlist]:
+        if cat not in categories:
+            categories.append(cat)
+    return categories
 
 def get_port_data(port, subj):
     nodes = port.get_value(subj.me)
@@ -1325,6 +1329,17 @@ def get_plugin_info(world, plugin, useAbsolutePath = True):
         'errors'  : errors,
         'warnings': warnings,
     }
+
+# ------------------------------------------------------------------------------------------------------------
+# get_plugin_info_helper
+
+# Get info from a simple URI, without the need of your own lilv world
+# This is used by get_plugins_info in MOD-SDK
+def get_plugin_info_helper(uri):
+    world = lilv.World()
+    world.load_all()
+    plugins = world.get_all_plugins()
+    return [get_plugin_info(world, p, False) for p in plugins]
 
 # ------------------------------------------------------------------------------------------------------------
 # get_plugins_info
