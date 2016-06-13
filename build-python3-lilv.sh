@@ -78,7 +78,7 @@ cd "$BASEDIR"
 
 if [ ! -d lv2 ]; then
   git clone --depth 1 git://github.com/drobilla/lv2
-  cd lv2 && patch -p1 -i "$OLDDIR"/lv2-plugin-is-project.patch; cd ..
+  patch -p1 -d lv2 -i "$OLDDIR"/lv2-plugin-is-project.patch
 fi
 
 if [ ! -d mod-sdk ]; then
@@ -92,6 +92,8 @@ fi
 if [ ! -d serd ]; then
   git clone http://git.drobilla.net/serd.git serd
   sed -i "s|Libs: -L\${libdir} -l@LIB_SERD@|Libs: -L\${libdir} -l@LIB_SERD@ -lm|" serd/serd.pc.in
+  # NOTE: need to remove this patch when it's applied upstream
+  patch -p1 -d serd -i "$OLDDIR"/serd-fix-unitialized-read-error.patch
 fi
 
 if [ ! -d sord ]; then

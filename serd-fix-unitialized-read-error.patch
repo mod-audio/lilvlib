@@ -1,0 +1,12 @@
+diff --git a/src/reader.c b/src/reader.c
+index 5465dba..7041f48 100644
+--- a/src/reader.c
++++ b/src/reader.c
+@@ -1515,6 +1515,7 @@ serd_reader_new(SerdSyntax        syntax,
+ 	me->read_head        = 0;
+ 	me->strict           = false;
+ 	me->eof              = false;
++	me->error            = false;
+ 	me->seen_genid       = false;
+ #ifdef SERD_STACK_CHECK
+ 	me->allocs           = 0;
