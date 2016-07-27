@@ -92,8 +92,6 @@ fi
 if [ ! -d serd ]; then
   git clone http://git.drobilla.net/serd.git serd
   sed -i "s|Libs: -L\${libdir} -l@LIB_SERD@|Libs: -L\${libdir} -l@LIB_SERD@ -lm|" serd/serd.pc.in
-  # NOTE: need to remove this patch when it's applied upstream
-  patch -p1 -d serd -i "$OLDDIR"/serd-fix-unitialized-read-error.patch
 fi
 
 if [ ! -d sord ]; then
