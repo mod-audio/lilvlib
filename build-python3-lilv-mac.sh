@@ -56,18 +56,30 @@ fi
 
 if [ ! -d serd ]; then
   git clone http://git.drobilla.net/serd.git serd
+  cd serd &&
+      git reset --hard 0688460b2ffd4d85fddda80fb1c3bd408335f9d7 &&
+      cd ..
 fi
 
 if [ ! -d sord ]; then
   git clone http://git.drobilla.net/sord.git sord
+  cd sord &&
+      git reset --hard 1bf91df7efb71339b98f27cb88487f0ddd23cde8 &&
+      cd ..
 fi
 
 if [ ! -d sratom ]; then
   git clone http://git.drobilla.net/sratom.git sratom
+  cd sratom &&
+      git reset --hard cc233a05de0690001ee2d067531bcc06248b751b &&
+      cd ..
 fi
 
 if [ ! -d lilv ]; then
   git clone http://git.drobilla.net/lilv.git lilv
+  cd lilv &&
+      git reset --hard 23293be2f10fd64ff85eddb50b6aa381694fa3a3 &&
+      cd ..
 fi
 
 # sed -i -e "s/bld.add_post_fun(autowaf.run_ldconfig)//" */wscript
