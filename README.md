@@ -11,7 +11,7 @@ To start simply run:
 If you're missing some dependency the script will let you know right at the beginning.
 
 
-The generated package will contain python3-lilv and also everything needed for falkTX's LV2 plugin inquisition.
+The generated package will contain python3-lilv and also everything needed for MOD's LV2 plugin inquisition.
 This includes:
 
 - LV2 headers and definitions
@@ -23,4 +23,4 @@ This includes:
 
 The sord_validate_mod is a helper script that runs sord_validate with the correct bundles.
 
-Because this package uses the definitions copied during build it does not depend on any external resources.
+Because this package uses the definitions copied during build (in /opt), it does not depend on any external resources.
