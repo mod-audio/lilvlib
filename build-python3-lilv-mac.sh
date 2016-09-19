@@ -34,6 +34,7 @@ export CFLAGS="-I/usr/local/include -I/usr/local/lib/python3.5/site-packages/num
 export CXXFLAGS="-I/usr/local/include -I/usr/local/lib/python3.5/site-packages/numpy/core/include"
 export CPPFLAGS=""
 export LDFLAGS=""
+export PKG_CONFIG_PATH="/usr/local/lib/pkgconfig"
 
 mkdir -p "$BASEDIR"
 cd "$BASEDIR"
@@ -92,7 +93,8 @@ if [ ! -f lv2/build-done ]; then
   python3 ./waf configure --prefix=/usr/local --no-plugins --copy-headers
   python3 ./waf build
   sudo python3 ./waf install
-  sudo cp -r schemas.lv2 lv2/lv2plug.in/ns/meta /usr/local/lib/lv2/
+  sudo cp -r schemas.lv2 /usr/local/lib/lv2/
+  sudo cp -r lv2/lv2plug.in/ns/meta /usr/local/lib/lv2/
   touch build-done
   cd ..
 fi
