@@ -17,5 +17,5 @@ setup(
         'Operating System :: OS Independent',
         'Programming Language :: Python',
     ],
-    url='https://github.com/portalmod/lilvlib',
+    url='https://github.com/moddevices/lilvlib',
 )
