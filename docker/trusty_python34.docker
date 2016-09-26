@@ -1,0 +1,28 @@
+# This Dockerfile can be used to build lilvlib using:
+# - Ubuntu 14.04 (Trusty)
+# - Python 3.4
+
+FROM ubuntu:14.04
+
+MAINTAINER Alexandre Cunha <ale@moddevices.com>
+ENV DEBIAN_FRONTEND noninteractive
+
+# update and upgrade system
+RUN apt-get update \
+    && apt-get upgrade -qy \
+    && apt-get install -qy ssh \
+    && apt-get clean
+
+RUN mkdir /root/.ssh
+RUN touch /root/.ssh/known_hosts
+RUN ssh-keyscan github.com >> /root/.ssh/known_hosts
+
+RUN apt-get install -qy git libpcre3-dev devscripts \
+    build-essential pkg-config swig debhelper \
+    python3-all-dev python3-numpy && apt-get clean
+
+VOLUME /lilvlib
+WORKDIR /lilvlib
+
+CMD git clone https://github.com/moddevices/lilvlib /lilvlib && ./build-python3-lilv.sh
+
