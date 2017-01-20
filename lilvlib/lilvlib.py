@@ -90,10 +90,11 @@ def get_category(nodes):
         'ConverterPlugin': ['Utility', 'Converter'],
         'FunctionPlugin': ['Utility', 'Function'],
         'MixerPlugin': ['Utility', 'Mixer'],
+        'MIDIFilterPlugin': ['MIDI-Filter', 'Filter'],
     }
 
     def fill_in_category(node):
-        category = node.as_string().replace("http://lv2plug.in/ns/lv2core#","")
+        category = node.as_string().replace("http://lv2plug.in/ns/lv2core#","").replace("http://moddevices.com/ns/mod#","")
         if category in category_indexes.keys():
             return category_indexes[category]
         return []
@@ -575,7 +576,11 @@ def get_plugin_info(world, plugin, useAbsolutePath = True):
     # --------------------------------------------------------------------------------------------------------
     # comment
 
-    comment = plugin.get_value(ns_rdfs.comment).get_first().as_string() or ""
+    comment = (plugin.get_value(ns_rdfs.comment).get_first().as_string() or "").strip()
+
+    # sneaky empty comments!
+    if len(comment) > 0 and comment == len(comment) * comment[0]:
+        comment = ""
 
     if not comment:
         errors.append("plugin comment is missing")
@@ -1028,8 +1033,14 @@ def get_plugin_info(world, plugin, useAbsolutePath = True):
                 #if morphtyp:
                     #types.append(morphtyp.rsplit("#",1)[-1].replace("Port","",1))
 
+        # port comment
+        pcomment = (get_port_data(port, ns_rdfs.comment) or [""])[0]
+
         # port designation
         designation = (get_port_data(port, ns_lv2core.designation) or [""])[0]
+
+        # port rangeSteps
+        rangeSteps = (get_port_data(port, ns_mod.rangeSteps) or get_port_data(port, ns_pprops.rangeSteps) or [None])[0]
 
         # port properties
         properties = [typ.rsplit("#",1)[-1] for typ in get_port_data(port, ns_lv2core.portProperty)]
@@ -1259,9 +1270,10 @@ def get_plugin_info(world, plugin, useAbsolutePath = True):
                 'render': urender,
                 'symbol': usymbol,
             } if "Control" in types and ulabel and urender and usymbol else {},
+            'comment'    : pcomment,
             'designation': designation,
             'properties' : properties,
-            'rangeSteps' : (get_port_data(port, ns_mod.rangeSteps) or get_port_data(port, ns_pprops.rangeSteps) or [None])[0],
+            'rangeSteps' : rangeSteps,
             'scalePoints': scalepoints,
             'shortName'  : psname,
         })
