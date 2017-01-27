@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='mod-lilvlib',
-    version='0.0.13',
+    version='1.0.0',
     description='A set of helper methods to extract plugin and pedalboard data from TTLs using lilv',
     author='Falktx',
     author_email='falktx@gmail.com',
