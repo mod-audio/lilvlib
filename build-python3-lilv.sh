@@ -77,16 +77,19 @@ cd "$BASEDIR"
 # Get code
 
 if [ ! -d lv2 ]; then
-  git clone --depth 1 git://github.com/drobilla/lv2
+  git clone http://github.com/drobilla/lv2
+  cd lv2 &&
+      git reset --hard b36868f3b96a436961c0c51b5b2dd71d05da9b12 &&
+      cd ..
   patch -p1 -d lv2 -i "$OLDDIR"/lv2-plugin-is-project.patch
 fi
 
 if [ ! -d mod-sdk ]; then
-  git clone --depth 1 git://github.com/moddevices/mod-sdk
+  git clone --depth 1 http://github.com/moddevices/mod-sdk
 fi
 
 if [ ! -d kxstudio-ext ]; then
-  git clone --depth 1 git://github.com/KXStudio/LV2-Extensions kxstudio-ext
+  git clone --depth 1 http://github.com/KXStudio/LV2-Extensions kxstudio-ext
 fi
 
 if [ ! -d serd ]; then
