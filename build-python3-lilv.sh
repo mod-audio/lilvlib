@@ -77,7 +77,7 @@ cd "$BASEDIR"
 # Get code
 
 if [ ! -d lv2 ]; then
-  git clone http://github.com/drobilla/lv2
+  git clone git://github.com/drobilla/lv2
   cd lv2 &&
       git reset --hard 0713986dcd50195c81675d5819e1cf6658a38fee &&
       cd ..

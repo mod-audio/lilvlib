@@ -43,7 +43,10 @@ cd "$BASEDIR"
 # Get code
 
 if [ ! -d lv2 ]; then
-  git clone --depth 1 git://github.com/drobilla/lv2
+  git clone git://github.com/drobilla/lv2
+  cd lv2 &&
+      git reset --hard 0713986dcd50195c81675d5819e1cf6658a38fee &&
+      cd ..
   cd lv2 && patch -p1 -i "$OLDDIR"/lv2-plugin-is-project.patch; cd ..
 fi
 
@@ -58,21 +61,21 @@ fi
 if [ ! -d serd ]; then
   git clone http://git.drobilla.net/serd.git serd
   cd serd &&
-      git reset --hard 0688460b2ffd4d85fddda80fb1c3bd408335f9d7 &&
+      git reset --hard 83de3f80ca6cbbaac35c003bba9d6625db525939 &&
       cd ..
 fi
 
 if [ ! -d sord ]; then
   git clone http://git.drobilla.net/sord.git sord
   cd sord &&
-      git reset --hard 1bf91df7efb71339b98f27cb88487f0ddd23cde8 &&
+      git reset --hard 31ea384f24e12778d6e30cc7a30b0f48f3d50523 &&
       cd ..
 fi
 
 if [ ! -d sratom ]; then
   git clone http://git.drobilla.net/sratom.git sratom
   cd sratom &&
-      git reset --hard cc233a05de0690001ee2d067531bcc06248b751b &&
+      git reset --hard f62a6d15cb63ffe266ec3cd133245df8947191b2 &&
       cd ..
 fi
 
@@ -94,7 +97,6 @@ if [ ! -f lv2/build-done ]; then
   python3 ./waf build
   sudo python3 ./waf install
   sudo cp -r schemas.lv2 /usr/local/lib/lv2/
-  sudo cp -r lv2/lv2plug.in/ns/meta /usr/local/lib/lv2/
   touch build-done
   cd ..
 fi
