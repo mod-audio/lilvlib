@@ -3,11 +3,6 @@
 PREFIX=/opt/mod
 LV2DIR=/opt/mod/lib/lv2
 
-if [ ! -d $LV2DIR/meta ]; then
-  echo "$LV2DIR/meta directory is missing"
-  exit
-fi
-
 if [ ! -d $LV2DIR/schemas.lv2 ]; then
   echo "$LV2DIR/schemas.lv2 directory is missing"
   exit
@@ -35,7 +30,6 @@ if [ "$1"x == ""x ]; then
 fi
 
 exec $PREFIX/bin/sord_validate $(find \
-  $LV2DIR/meta \
   $LV2DIR/{atom,buf-size,data-access,dynmanifest,event,instance-access,log,lv2core,midi,morph,options,parameters,patch,port-groups,port-props,presets,resize-port,schemas,state,time,ui,units,urid,uri-map,worker}.lv2 \
   $LV2DIR/mod.lv2 \
   $LV2DIR/modgui.lv2 \

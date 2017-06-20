@@ -79,23 +79,23 @@ cd "$BASEDIR"
 if [ ! -d lv2 ]; then
   git clone http://github.com/drobilla/lv2
   cd lv2 &&
-      git reset --hard b36868f3b96a436961c0c51b5b2dd71d05da9b12 &&
+      git reset --hard 0713986dcd50195c81675d5819e1cf6658a38fee &&
       cd ..
   patch -p1 -d lv2 -i "$OLDDIR"/lv2-plugin-is-project.patch
 fi
 
 if [ ! -d mod-sdk ]; then
-  git clone --depth 1 http://github.com/moddevices/mod-sdk
+  git clone --depth 1 git://github.com/moddevices/mod-sdk
 fi
 
 if [ ! -d kxstudio-ext ]; then
-  git clone --depth 1 http://github.com/KXStudio/LV2-Extensions kxstudio-ext
+  git clone --depth 1 git://github.com/KXStudio/LV2-Extensions kxstudio-ext
 fi
 
 if [ ! -d serd ]; then
   git clone http://git.drobilla.net/serd.git serd
   cd serd &&
-      git reset --hard 0688460b2ffd4d85fddda80fb1c3bd408335f9d7 &&
+      git reset --hard 83de3f80ca6cbbaac35c003bba9d6625db525939 &&
       cd ..
   sed -i "s|Libs: -L\${libdir} -l@LIB_SERD@|Libs: -L\${libdir} -l@LIB_SERD@ -lm|" serd/serd.pc.in
 fi
@@ -103,14 +103,14 @@ fi
 if [ ! -d sord ]; then
   git clone http://git.drobilla.net/sord.git sord
   cd sord &&
-      git reset --hard 1bf91df7efb71339b98f27cb88487f0ddd23cde8 &&
+      git reset --hard 31ea384f24e12778d6e30cc7a30b0f48f3d50523 &&
       cd ..
 fi
 
 if [ ! -d sratom ]; then
   git clone http://git.drobilla.net/sratom.git sratom
   cd sratom &&
-      git reset --hard cc233a05de0690001ee2d067531bcc06248b751b &&
+      git reset --hard f62a6d15cb63ffe266ec3cd133245df8947191b2 &&
       cd ..
 fi
 
@@ -131,7 +131,7 @@ if [ ! -f lv2/build-done ]; then
   python3 ./waf configure --prefix="$PREFIX" --no-plugins --copy-headers
   python3 ./waf build
   python3 ./waf install
-  cp -r schemas.lv2 lv2/lv2plug.in/ns/meta "$PREFIX"/lib/lv2/
+  cp -r schemas.lv2 "$PREFIX"/lib/lv2/
   touch build-done
   cd ..
 fi
@@ -179,7 +179,7 @@ fi
 
 if [ ! -f lilv/build-done ]; then
   cd lilv
-  python3 ./waf configure --prefix="$PREFIX" --static --static-progs --no-shared --no-utils
+  python3 ./waf configure --prefix="$PREFIX" --static --static-progs --no-shared --no-utils --no-bash-completion
   python3 ./waf build
   python3 ./waf install
   touch build-done
