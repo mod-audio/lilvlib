@@ -1,3 +1,5 @@
 *.deb
 .idea/
 *.egg-info
+build
+dist
