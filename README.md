@@ -32,7 +32,7 @@ Build:
 
 Install
 ```bash
-dpkg -i python3-lilv_0.22.1+git20160613_amd64.deb
+dpkg -i python3-lilv_0.22.1+git20170620_amd64.deb
 ```
 
 Use
