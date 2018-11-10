@@ -34,6 +34,8 @@ deploy_artifacts:
   environment: artifact_repo
   tags:
   - artifact_repo
+  before_script:
+  - '! [ -d /artifacts ] && echo "Missing artifacts dir" && exit 1'
   script:
   - cp -R wheelhouse/ /artifacts/
   - mkdir -p /artifacts/dpkg/
