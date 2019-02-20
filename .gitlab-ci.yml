@@ -35,16 +35,10 @@ publish_artifacts:
   tags:
   - artifacts_repo
   before_script:
-  - '! [ -d /artifacts ] && echo "Missing artifacts dir" && exit 1'
+  - '! [ -f /drop/process.sh ] && echo "Missing drop/process.sh" && exit 1'
   script:
-  - cd wheelhouse
-  - |
-      for wheel in *.whl; do
-        d=$(echo $wheel | sed -r 's/([^-]*)-.*/\1/' | sed -r 's/[_]+/-/')
-        mkdir -p /artifacts/wheelhouse/$d
-        mv -f $wheel /artifacts/wheelhouse/$d/
-      done
-  - mkdir -p /artifacts/dpkg
-  - cp ../*.deb /artifacts/dpkg/
+  - cp ./wheelhouse/*.whl /drop/
+  - cp ./*.deb /drop/
+  - cd /drop && ./process.sh
   only:
   - master
