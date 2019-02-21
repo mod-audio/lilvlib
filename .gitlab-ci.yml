@@ -35,10 +35,10 @@ publish_artifacts:
   tags:
   - artifacts_repo
   before_script:
-  - '! [ -f /drop/process.sh ] && echo "Missing drop/process.sh" && exit 1'
+  - '! [ -f /artifacts/drop/process.sh ] && echo "Missing /artifacts/drop/process.sh" && exit 1'
   script:
-  - cp ./wheelhouse/*.whl /drop/
-  - cp ./*.deb /drop/
-  - cd /drop && ./process.sh
+  - cp ./wheelhouse/*.whl /artifacts/drop/
+  - cp ./*.deb /artifacts/drop/
+  - cd /artifacts/drop && ./process.sh
   only:
   - master
