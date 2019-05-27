@@ -23,5 +23,4 @@ RUN apt-get install -qy git libpcre3-dev devscripts \
 VOLUME /lilvlib
 WORKDIR /lilvlib
 
-CMD git clone https://github.com/moddevices/lilvlib /lilvlib && ./build-python3-lilv.sh
-
+CMD git clone https://github.com/moddevices/lilvlib lilvlib && cd lilvlib && ./build-python3-lilv.sh
