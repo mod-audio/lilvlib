@@ -1,6 +1,5 @@
 stages:
   - build
-  - publish
 
 build_wheel:
   stage: build
@@ -12,6 +11,8 @@ build_wheel:
   artifacts:
     paths:
     - wheelhouse/*.whl
+  only:
+  - master
 
 build_deb_amd64:
   stage: build
@@ -26,19 +27,5 @@ build_deb_amd64:
   artifacts:
     paths:
     - ./*.deb
-  only:
-  - master
-
-publish_artifacts:
-  stage: publish
-  environment: artifacts_repo
-  tags:
-  - artifacts_repo
-  before_script:
-  - '! [ -f /artifacts/drop/process.sh ] && echo "Missing /artifacts/drop/process.sh" && exit 1'
-  script:
-  - cp ./wheelhouse/*.whl /artifacts/drop/
-  - cp ./*.deb /artifacts/drop/
-  - cd /artifacts/drop && ./process.sh
   only:
   - master
