@@ -18,9 +18,11 @@ RUN ssh-keyscan github.com >> /root/.ssh/known_hosts
 
 RUN apt-get install -qy git libpcre3-dev devscripts \
     build-essential pkg-config swig debhelper \
-    python3-all-dev python3-numpy && apt-get clean
+    python3-all-dev python3-numpy python3-pip && apt-get clean
 
-VOLUME /lilvlib
+COPY . /lilvlib
 WORKDIR /lilvlib
 
-CMD git clone https://github.com/moddevices/lilvlib lilvlib && cd lilvlib && ./build-python3-lilv.sh
+RUN ./build-python3-lilv.sh
+
+RUN pip3 wheel -w wheelhouse .
