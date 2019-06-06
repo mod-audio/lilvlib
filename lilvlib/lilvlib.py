@@ -584,16 +584,28 @@ def get_plugin_info(world, plugin, useAbsolutePath = True):
     # --------------------------------------------------------------------------------------------------------
     # license
 
-    license = plugin.get_value(ns_doap.license).get_first().as_string() or ""
+    licenses = []
+    nodes    = plugin.get_value(ns_doap.license)
+    it       = nodes.begin()
 
-    if not license:
-        prj = plugin.get_value(ns_lv2core.project).get_first()
-        if prj.me is not None:
-            licsnode = lilv.lilv_world_get(world.me, prj.me, ns_doap.license.me, None)
+    while not nodes.is_end(it):
+        licenses.append(nodes.get(it).as_string())
+        it = nodes.next(it)
+
+    del nodes, it
+
+    if len(licenses) > 0:
+        license = sorted(licenses)[0]
+
+    else:
+        license = ""
+        project = plugin.get_value(ns_lv2core.project).get_first()
+        if project.me is not None:
+            licsnode = lilv.lilv_world_get(world.me, project.me, ns_doap.license.me, None)
             if licsnode is not None:
                 license = lilv.lilv_node_as_string(licsnode)
             del licsnode
-        del prj
+        del project
 
     if not license:
         errors.append("plugin license is missing")
@@ -1301,7 +1313,7 @@ def get_plugin_info(world, plugin, useAbsolutePath = True):
             } if "Control" in types and ulabel and urender and usymbol else {},
             'comment'    : pcomment,
             'designation': designation,
-            'properties' : properties,
+            'properties' : sorted(properties),
             'rangeSteps' : rangeSteps,
             'scalePoints': scalepoints,
             'shortName'  : psname,
