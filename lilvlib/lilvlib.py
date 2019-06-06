@@ -1384,13 +1384,13 @@ def get_plugin_info(world, plugin, useAbsolutePath = True):
         'stability': stability,
 
         'author' : author,
-        'bundles': bundles,
+        'bundles': sorted(bundles),
         'gui'    : gui,
         'ports'  : ports,
         'presets': presets,
 
-        'errors'  : errors,
-        'warnings': warnings,
+        'errors'  : sorted(errors),
+        'warnings': sorted(warnings),
     }
 
 # ------------------------------------------------------------------------------------------------------------
