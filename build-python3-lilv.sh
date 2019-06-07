@@ -199,6 +199,11 @@ debuild clean
 debuild binary
 debuild clean
 
+# if the above commands fail, try these:
+# fakeroot debian/rules clean
+# fakeroot debian/rules binary
+# fakeroot debian/rules clean
+
 # -------------------------------------------------------------------------------------------
 # Cleanup
 
