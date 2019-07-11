@@ -105,6 +105,7 @@ def get_category(nodes):
         'SpectralPlugin': ['Spectral'],
         'UtilityPlugin': ['Utility'],
         'MIDIPlugin': ['Utility', 'MIDI'],
+        'ControlVoltagePlugin': ['ControlVoltage'],
     }
 
     def fill_in_lv2_category(node):
