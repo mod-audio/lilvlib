@@ -299,7 +299,7 @@ def get_pedalboard_info(bundle):
             it   = ports.next(it)
             if port.me is None:
                 continue
-            if port.as_uri().endswith("/midi_legacy_mode"):
+            if port.as_uri().endswith("/midi_separated_mode"):
                 isDuoX = True
                 break
         else:
