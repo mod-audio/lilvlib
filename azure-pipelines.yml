@@ -1,0 +1,49 @@
+trigger:
+- master
+
+pool:
+  name: 'MOD Agents'
+
+jobs:
+- job: build_wheel
+  strategy:
+    matrix:
+      Python34:
+        python.version: '3.4'
+        container.image: 'moddevices/devtools:ub14-py34'
+  container: $[ variables['container.image'] ]
+
+  steps:
+  - script: |
+      sudo python3 -m pip install --upgrade pip setuptools wheel
+    displayName: 'Install dependencies'
+  
+  - task: PipAuthenticate@1
+    displayName: 'Pip Authenticate'
+    inputs:
+      artifactFeeds: mod-feed
+
+  - script: |
+      python3 -m pip wheel -w '$(Build.ArtifactStagingDirectory)' .
+    displayName: 'Build wheel'
+
+  - task: PublishBuildArtifacts@1
+    inputs:
+      PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+      ArtifactName: 'drop'
+      PublishLocation: 'Container'
+
+- job: build_debian_pkg
+  container: moddevices/devtools:ub14-py34
+  steps:
+  - script: |
+      sudo apt-get update -qq
+      sudo apt-get install --no-install-recommends -qy libpcre3-dev devscripts pkg-config swig debhelper python3-numpy
+      ./build-python3-lilv.sh
+      cp ./*.deb $(Build.ArtifactStagingDirectory)
+    displayName: 'Build .deb'
+  - task: PublishBuildArtifacts@1
+    inputs:
+      PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+      ArtifactName: 'drop'
+      PublishLocation: 'Container'
