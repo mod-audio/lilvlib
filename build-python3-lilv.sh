@@ -70,6 +70,8 @@ export CXXFLAGS="-fPIC -O2 -mtune=generic"
 export CPPFLAGS=""
 export LDFLAGS="-ldl -lm"
 
+export LC_ALL="C"
+
 mkdir -p "$BASEDIR"
 cd "$BASEDIR"
 
