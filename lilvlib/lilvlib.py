@@ -181,7 +181,7 @@ def get_port_unit(miniuri):
       'semitone12TET': ["semitones", "%f semi", "semi"],
       'degree': ["degrees", "%f deg", "deg"],
       'midiNote': ["MIDI note", "MIDI note %d", "note"],
-      'v': ["volts", "%f v", "v"],
+      'volts': ["volts", "%f v", "v"],
   }
   if miniuri in units.keys():
       return units[miniuri]
