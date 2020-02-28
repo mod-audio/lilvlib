@@ -1305,6 +1305,7 @@ def get_plugin_info(world, plugin, useAbsolutePath = True):
                 # using pre-existing lv2 unit
                 if uuri is not None and uuri.startswith("http://lv2plug.in/ns/"):
                     uuri  = uuri.replace("http://lv2plug.in/ns/extensions/units#","",1)
+                    uuri  = uuri.replace(PREFIX_MOD,"",1)
                     alnum = uuri.isalnum()
 
                     if not alnum:
