@@ -11,6 +11,12 @@ import os
 from math import fmod
 
 # ------------------------------------------------------------------------------------------------------------
+# Definitions
+
+PREFIX_LV2CORE = "http://lv2plug.in/ns/lv2core#"
+PREFIX_MOD     = "http://moddevices.com/ns/mod#"
+
+# ------------------------------------------------------------------------------------------------------------
 # Utilities
 
 def LILV_FOREACH(collection, func):
@@ -109,13 +115,13 @@ def get_category(nodes):
     }
 
     def fill_in_lv2_category(node):
-        category = node.as_string().replace("http://lv2plug.in/ns/lv2core#","")
+        category = node.as_string().replace(PREFIX_LV2CORE,"")
         if category in lv2_category_indexes.keys():
             return lv2_category_indexes[category]
         return []
 
     def fill_in_mod_category(node):
-        category = node.as_string().replace("http://moddevices.com/ns/mod#","")
+        category = node.as_string().replace(PREFIX_MOD,"")
         if category in mod_category_indexes.keys():
             return mod_category_indexes[category]
         return []
@@ -175,6 +181,7 @@ def get_port_unit(miniuri):
       'semitone12TET': ["semitones", "%f semi", "semi"],
       'degree': ["degrees", "%f deg", "deg"],
       'midiNote': ["MIDI note", "MIDI note %d", "note"],
+      'v': ["volts", "%f v", "v"],
   }
   if miniuri in units.keys():
       return units[miniuri]
@@ -375,13 +382,13 @@ def get_pedalboard_info(bundle):
 
             port_type_uri = lilv.lilv_node_as_uri(port_type)
 
-            if port_type_uri == "http://lv2plug.in/ns/lv2core#InputPort":
+            if port_type_uri == (PREFIX_LV2CORE + "InputPort"):
                 portDir = "input"
-            elif port_type_uri == "http://lv2plug.in/ns/lv2core#OutputPort":
+            elif port_type_uri == (PREFIX_LV2CORE + "OutputPort"):
                 portDir = "output"
-            elif port_type_uri == "http://lv2plug.in/ns/lv2core#AudioPort":
+            elif port_type_uri == (PREFIX_LV2CORE + "AudioPort"):
                 portType = "audio"
-            elif port_type_uri == "http://lv2plug.in/ns/lv2core#CVPort":
+            elif port_type_uri in ((PREFIX_LV2CORE + "CVPort"), (PREFIX_MOD + "CVPort")):
                 portType = "cv"
             elif port_type_uri == "http://lv2plug.in/ns/ext/atom#AtomPort":
                 portType = "atom"
@@ -1220,7 +1227,7 @@ def get_plugin_info(world, plugin, useAbsolutePath = True):
                     ranges['maximum'] = 1.0
                     ranges['default'] = 0.0
 
-                if "CV" not in types and designation != "http://lv2plug.in/ns/lv2core#latency":
+                if "CV" not in types and designation != (PREFIX_LV2CORE + "latency"):
                     errors.append("port '%s' is missing value ranges" % portname)
 
             nodes = port.get_scale_points()
