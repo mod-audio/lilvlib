@@ -261,6 +261,10 @@ def get_pedalboard_info(bundle):
         'name'  : plugin.get_name().as_string(),
         'uri'   : plugin.get_uri().as_string(),
         'author': plugin.get_author_name().as_string() or "", # Might be empty
+        'unit': {
+            'name': plugin.get_value(ns_modpedal.unitName).get_first().as_string() or "",
+            'model': plugin.get_value(ns_modpedal.unitModel).get_first().as_string() or "",
+        },
         'hardware': {
             # we save this info later
             'audio': {
@@ -274,7 +278,7 @@ def get_pedalboard_info(bundle):
             'midi': {
                 'ins' : 0,
                 'outs': 0
-             }
+             },
         },
         'size': {
             'width' : plugin.get_value(ns_modpedal.width).get_first().as_int(),
@@ -283,8 +287,34 @@ def get_pedalboard_info(bundle):
         'screenshot' : os.path.basename(plugin.get_value(ns_modpedal.screenshot).get_first().as_string() or ""),
         'thumbnail'  : os.path.basename(plugin.get_value(ns_modpedal.thumbnail).get_first().as_string() or ""),
         'connections': [], # we save this info later
-        'plugins'    : []  # we save this info later
+        'plugins'    : [], # we save this info later
     }
+
+    # handle unit name and model for old pedalboards
+    if not info['unit']['name']:
+        ports = plugin.get_value(ns_lv2core.port)
+        it = ports.begin()
+        while not ports.is_end(it):
+            port = ports.get(it)
+            it   = ports.next(it)
+            if port.me is None:
+                continue
+            if port.as_uri().endswith(("/midi_legacy_mode", "/midi_separated_mode")):
+                isDuoX = True
+                break
+        else:
+            isDuoX = False
+
+        if isDuoX:
+            info['unit'] = {
+              'name': "MOD Duo X",
+              'model': "duox:aarch64-a53",
+            }
+        else:
+            info['unit'] = {
+              'name': "MOD Duo",
+              'model': "duo:arm-a7",
+            }
 
     # connections
     arcs = plugin.get_value(ns_ingen.arc)
