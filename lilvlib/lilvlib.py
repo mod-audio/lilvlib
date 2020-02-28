@@ -437,22 +437,28 @@ def get_pedalboard_info(bundle):
         instance = lilv.lilv_uri_to_path(lilv.lilv_node_as_string(block.me)).replace(bundle,"",1)
         uri      = lilv.lilv_node_as_uri(proto)
 
+        x        = lilv.lilv_world_get(world.me, block.me, ns_ingen.canvasX.me, None)
+        y        = lilv.lilv_world_get(world.me, block.me, ns_ingen.canvasY.me, None)
         enabled  = lilv.lilv_world_get(world.me, block.me, ns_ingen.enabled.me, None)
         builder  = lilv.lilv_world_get(world.me, block.me, ns_mod.builderVersion.me, None)
         release  = lilv.lilv_world_get(world.me, block.me, ns_mod.releaseNumber.me, None)
         minorver = lilv.lilv_world_get(world.me, block.me, ns_lv2core.minorVersion.me, None)
         microver = lilv.lilv_world_get(world.me, block.me, ns_lv2core.microVersion.me, None)
+        buildId  = lilv.lilv_world_get(world.me, block.me, ns_mod.buildId.me, None)
+        buildEnv = lilv.lilv_world_get(world.me, block.me, ns_mod.buildEnvironment.me, None)
 
         ingenblocks.append({
             "instance": instance,
             "uri"     : uri,
-            "x"       : lilv.lilv_node_as_float(lilv.lilv_world_get(world.me, block.me, ns_ingen.canvasX.me, None)),
-            "y"       : lilv.lilv_node_as_float(lilv.lilv_world_get(world.me, block.me, ns_ingen.canvasY.me, None)),
+            "x"       : lilv.lilv_node_as_float(x),
+            "y"       : lilv.lilv_node_as_float(y),
             "enabled" : lilv.lilv_node_as_bool(enabled) if enabled is not None else False,
             "builder" : lilv.lilv_node_as_int(builder) if builder else 0,
             "release" : lilv.lilv_node_as_int(release) if release else 0,
             "minorVersion": lilv.lilv_node_as_int(minorver) if minorver else 0,
             "microVersion": lilv.lilv_node_as_int(microver) if microver else 0,
+            "buildId"         : lilv.lilv_node_as_string(buildId),
+            "buildEnvironment": lilv.lilv_node_as_string(buildEnv),
         })
 
     info['connections'] = ingenarcs
