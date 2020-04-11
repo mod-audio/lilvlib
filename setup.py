@@ -1,8 +1,17 @@
+import os
+import re
+
 from setuptools import setup
+
+with open('lilvlib/__init__.py', 'r') as fh:
+    version = re.search(r'^__version__\s*=\s*[\'"]([^\'"]*)[\'"]', fh.read(), re.MULTILINE).group(1)
+
+buildid = os.environ.get('SETUP_BUILD_ID', None)
+version = '{0}.dev{1}'.format(version, buildid) if buildid else version
 
 setup(
     name='mod-lilvlib',
-    version='1.0.3',
+    version=version,
     description='A set of helper methods to extract plugin and pedalboard data from TTLs using lilv',
     author='Falktx',
     author_email='falktx@gmail.com',

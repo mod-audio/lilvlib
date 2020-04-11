@@ -197,14 +197,14 @@ sed -i "s/-llilv-0/-llilv-0 -lsratom-0 -lsord-0 -lserd-0 -ldl -lm/" "$PKG_CONFIG
 cd "$OLDDIR/python3-lilv-pkg"
 cp -r "$BASEDIR"/lilv/* .
 patch -p1 -i debian/patches/fix-link.patch
-debuild clean
-debuild binary
-debuild clean
+fakeroot debian/rules clean
+fakeroot debian/rules binary
+fakeroot debian/rules clean
 
 # if the above commands fail, try these:
-# fakeroot debian/rules clean
-# fakeroot debian/rules binary
-# fakeroot debian/rules clean
+# debuild clean
+# debuild binary
+# debuild clean
 
 # -------------------------------------------------------------------------------------------
 # Cleanup

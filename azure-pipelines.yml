@@ -6,44 +6,46 @@ pool:
 
 jobs:
 - job: build_wheel
-  strategy:
-    matrix:
-      Python34:
-        python.version: '3.4'
-        container.image: 'moddevices/devtools:ub14-py34'
-  container: $[ variables['container.image'] ]
+  container: 'moddevices/devtools:ub18-py36'
 
   steps:
   - script: |
-      sudo python3 -m pip install --upgrade pip setuptools wheel
+      python3 -m pip install --upgrade pip setuptools wheel twine
+      python3 -m pip install --upgrade keyring artifacts-keyring keyrings.alt
     displayName: 'Install dependencies'
-  
+
   - task: PipAuthenticate@1
-    displayName: 'Pip Authenticate'
     inputs:
-      artifactFeeds: mod-feed
+      artifactFeeds: 'moddevices'
+    displayName: 'Pip Authenticate'
 
   - script: |
-      python3 -m pip wheel -w '$(Build.ArtifactStagingDirectory)' .
+      # if there's a tag 'release' then build a wheel for release
+      tags=($(git tag --points-at HEAD))
+      [[ " ${tags[@]} " =~ "release" ]] && python3 -m pip wheel -w '$(Build.ArtifactStagingDirectory)' .
+      # always build wheel for dev
+      SETUP_BUILD_ID='$(Build.BuildId)' python3 -m pip wheel -w '$(Build.ArtifactStagingDirectory)' .
     displayName: 'Build wheel'
 
-  - task: PublishBuildArtifacts@1
+  - task: TwineAuthenticate@1
     inputs:
-      PathtoPublish: '$(Build.ArtifactStagingDirectory)'
-      ArtifactName: 'drop'
-      PublishLocation: 'Container'
+      artifactFeed: 'moddevices'
+    displayName: 'Twine Authenticate'
+
+  - script: |
+      python3 -m twine upload -r moddevices --config-file $(PYPIRC_PATH) '$(Build.ArtifactStagingDirectory)/mod_lilvlib-*'
+    displayName: 'Twine upload wheels'
 
 - job: build_debian_pkg
-  container: moddevices/devtools:ub14-py34
+  container: 'moddevices/devtools:ub18-py36'
   steps:
   - script: |
       sudo apt-get update -qq
       sudo apt-get install --no-install-recommends -qy libpcre3-dev devscripts pkg-config swig debhelper python3-numpy
       ./build-python3-lilv.sh
-      cp ./*.deb $(Build.ArtifactStagingDirectory)
-    displayName: 'Build .deb'
-  - task: PublishBuildArtifacts@1
-    inputs:
-      PathtoPublish: '$(Build.ArtifactStagingDirectory)'
-      ArtifactName: 'drop'
-      PublishLocation: 'Container'
+      cp ./*.deb '$(Build.ArtifactStagingDirectory)'
+    displayName: 'Build debian package'
+
+  - upload: '$(Build.ArtifactStagingDirectory)'
+    artifact: 'drop'
+    displayName: Upload Manifests
