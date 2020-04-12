@@ -27,7 +27,7 @@ jobs:
 
       # if commit is marked with tag 'release' then build a wheel for release
       tags=($(git tag --points-at HEAD))
-      if [[ " ${tags[@]} " =~ "release" ]]; then
+      if [[ " ${tags[@]} " =~ v[0-9].* ]]; then
         python3 -m pip wheel -w '$(Build.ArtifactStagingDirectory)' .
         package_version=v$(python3 setup.py package_version)
         echo "##vso[build.addbuildtag]$package_version"
