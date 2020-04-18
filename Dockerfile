@@ -4,7 +4,7 @@
 
 FROM moddevices/devtools:ub18-py36
 
-MAINTAINER Alexandre Cunha <ale@moddevices.com>
+LABEL Alexandre Cunha <ale@moddevices.com>
 
 RUN mkdir /root/.ssh
 RUN touch /root/.ssh/known_hosts
