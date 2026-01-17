@@ -104,7 +104,6 @@ fi
 if [ ! -d serd ]; then
   git clone https://github.com/drobilla/serd.git serd
   git -C serd reset --hard 1fd12ee91b4dfc124ce4435b1fe52b3a69c75255
-#   sed -i "s|Libs: -L\${libdir} -l@LIB_SERD@|Libs: -L\${libdir} -l@LIB_SERD@ -lm|" serd/serd.pc.in
 fi
 
 if [ ! -d sord ]; then
@@ -276,12 +275,10 @@ pushd "${OLDDIR}/python3-lilv-pkg"
 
 mv "${BASEDIR}/system" system
 mkdir -p system/usr/bin
-mkdir -p system/usr/lib/python3/dist-packages/lilvlib
+mkdir -p system/usr/lib
 
 install -m 755 ../lv2_validate_mod system/usr/bin/
-install -m 644 ../lilvlib/*.py system/usr/lib/python3/dist-packages/lilvlib/
-
-mv system/opt/lilvlib/lib/python3/dist-packages/lilv.py system/usr/lib/python3/dist-packages/
+mv system/opt/lilvlib/lib/python3 system/usr/lib/python3
 
 rm -rf system/opt/lilvlib/include
 rm -rf system/opt/lilvlib/lib/pkgconfig
