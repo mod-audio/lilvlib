@@ -1,3 +1,9 @@
+python3-lilv (5:0.30.2+git20260117) stable; urgency=medium
+
+  * Update for latest lilv, now building with meson and using ctypes
+
+ -- falkTX <falktx@falktx.com>  Sat, 17 Jan 2026 16:04:21 +0100
+
 python3-lilv (4:0.22.1+git20170620) stable; urgency=medium
 
   * Latest git version

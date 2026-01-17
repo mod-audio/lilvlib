@@ -1,0 +1,34 @@
+#!/bin/bash
+
+PREFIX=/opt/lilvlib
+LV2DIR=${PREFIX}/lib/lv2
+
+# don't check all lv2 bundles, if atom.lv2 is installed the others should be too
+if [ ! -d ${LV2DIR}/atom.lv2 ]; then
+  echo "${LV2DIR}/atom.lv2 directory is missing"
+  exit
+fi
+
+if [ ! -d ${LV2DIR}/dg-properties.lv2 ]; then
+  echo "${LV2DIR}/dg-properties.lv2 directory is missing"
+  exit
+fi
+
+if [ ! -d ${LV2DIR}/kx-properties.lv2 ]; then
+  echo "${LV2DIR}/kx-properties.lv2 directory is missing"
+  exit
+fi
+
+if [ ! -d ${LV2DIR}/mod-license.lv2 ]; then
+  echo "${LV2DIR}/mod-license.lv2 directory is missing"
+  exit
+fi
+
+if [ -z "${1}" ]; then
+  echo "usage: ${0} /path/to/bundle"
+  exit 1
+fi
+
+exec ${PREFIX}/bin/sord_validate \
+  $(find ${LV2DIR} -name '*.ttl') \
+  $(find "$@" -name '*.ttl')

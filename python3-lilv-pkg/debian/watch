@@ -1,3 +1,0 @@
-version=3
-opts="uversionmangle=s/-/./,dversionmangle=s/~dfsg.*//" \
-http://download.drobilla.net/lilv-(.*)\.tar\.bz2

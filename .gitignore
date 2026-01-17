@@ -1,4 +1,5 @@
 *.deb
+*.ddeb
 .idea/
 *.egg-info
 build

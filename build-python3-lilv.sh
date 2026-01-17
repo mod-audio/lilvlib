@@ -2,10 +2,12 @@
 
 set -e
 
-# -------------------------------------------------------------------------------------------
+cd "$(dirname ${0})"
+
+# ---------------------------------------------------------------------------------------------------------------------
 # Check dependencies
 
-# sudo apt-get install --no-install-recommends debhelper devscripts dpkg-dev git pkg-config python3-all-dev python3-numpy subversion swig libpcre3-dev
+# sudo apt-get install --no-install-recommends debhelper devscripts dpkg-dev git meson pkg-config python3-all-dev subversion libpcre3-dev
 
 if (which debuild > /dev/null); then true; else
   echo "debuild not found, please install it"
@@ -17,6 +19,11 @@ if (which git > /dev/null); then true; else
   exit
 fi
 
+if (which meson > /dev/null); then true; else
+  echo "meson not found, please install it"
+  exit
+fi
+
 if (which pkg-config > /dev/null); then true; else
   echo "pkg-config not found, please install it"
   exit
@@ -24,11 +31,6 @@ fi
 
 if (which python3 > /dev/null); then true; else
   echo "python3 not found, please install it"
-  exit
-fi
-
-if (which swig > /dev/null); then true; else
-  echo "swig not found, please install it"
   exit
 fi
 
@@ -47,173 +49,258 @@ if (dpkg -l | grep python3-all-dev > /dev/null); then true; else
   exit
 fi
 
-if (dpkg -l | grep python3-numpy > /dev/null); then true; else
-  echo "python3-numpy not installed, please install it"
-  exit
-fi
-
 if (pkg-config --exists libpcre); then true; else
   echo "libpcre-dev not installed, please install it"
   exit
 fi
 
-# -------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # Prepare environment
 
 export OLDDIR=$(pwd)
 export BASEDIR="/tmp/python3-lilv-build"
-export PREFIX="$BASEDIR/system"
-export PKG_CONFIG_PATH="$PREFIX/lib/pkgconfig"
+export PREFIX="${BASEDIR}/system/opt/lilvlib"
+export PKG_CONFIG_PATH="${PREFIX}/lib/pkgconfig"
 
 export CFLAGS="-fPIC -O2 -mtune=generic"
 export CXXFLAGS="-fPIC -O2 -mtune=generic"
 export CPPFLAGS=""
-export LDFLAGS="-ldl -lm"
+export LDFLAGS=""
 
 export LC_ALL="C"
 
-mkdir -p "$BASEDIR"
-cd "$BASEDIR"
+rm -rf "${BASEDIR}"
+rm -rf "${OLDDIR}/python3-lilv-pkg/system"
 
-# -------------------------------------------------------------------------------------------
+mkdir -p "${BASEDIR}"
+cd "${BASEDIR}"
+
+# ---------------------------------------------------------------------------------------------------------------------
 # Get code
 
 if [ ! -d lv2 ]; then
-  git clone git://github.com/drobilla/lv2
-  cd lv2 &&
-      git reset --hard 0713986dcd50195c81675d5819e1cf6658a38fee &&
-      cd ..
-  patch -p1 -d lv2 -i "$OLDDIR"/lv2-plugin-is-project.patch
+  git clone https://github.com/lv2/lv2.git
+  git -C lv2 reset --hard 86a8bb5d103f749017e6288dbce9bbe981ed9955
+  patch -p1 -d lv2 -i "${OLDDIR}"/lv2-plugin-is-project.patch
 fi
 
-if [ ! -d mod-sdk ]; then
-  git clone --depth 1 git://github.com/moddevices/mod-sdk
+if [ ! -d darkglass-lv2-extensions ]; then
+  git clone --depth 1 https://github.com/Darkglass-Electronics/LV2-Extensions.git darkglass-lv2-extensions
 fi
 
-if [ ! -d kxstudio-ext ]; then
-  git clone --depth 1 git://github.com/KXStudio/LV2-Extensions kxstudio-ext
+if [ ! -d kxstudio-lv2-extensions ]; then
+  git clone --depth 1 https://github.com/KXStudio/LV2-Extensions.git kxstudio-lv2-extensions
+fi
+
+if [ ! -d mod-lv2-extensions ]; then
+  git clone --depth 1 https://github.com/mod-audio/mod-lv2-extensions.git
+fi
+
+if [ ! -d zix ]; then
+  git clone https://github.com/drobilla/zix.git zix
+  git -C zix reset --hard 9a2af45aef5d782a3ab0cd52065894f281629055
 fi
 
 if [ ! -d serd ]; then
-  git clone http://git.drobilla.net/serd.git serd
-  cd serd &&
-      git reset --hard 83de3f80ca6cbbaac35c003bba9d6625db525939 &&
-      cd ..
-  sed -i "s|Libs: -L\${libdir} -l@LIB_SERD@|Libs: -L\${libdir} -l@LIB_SERD@ -lm|" serd/serd.pc.in
+  git clone https://github.com/drobilla/serd.git serd
+  git -C serd reset --hard 1fd12ee91b4dfc124ce4435b1fe52b3a69c75255
+#   sed -i "s|Libs: -L\${libdir} -l@LIB_SERD@|Libs: -L\${libdir} -l@LIB_SERD@ -lm|" serd/serd.pc.in
 fi
 
 if [ ! -d sord ]; then
-  git clone http://git.drobilla.net/sord.git sord
-  cd sord &&
-      git reset --hard 31ea384f24e12778d6e30cc7a30b0f48f3d50523 &&
-      cd ..
+  git clone https://github.com/drobilla/sord.git sord
+  git -C sord reset --hard 5458be87a898a658985248b4178ae5cfd13696ea
 fi
 
 if [ ! -d sratom ]; then
-  git clone http://git.drobilla.net/sratom.git sratom
-  cd sratom &&
-      git reset --hard f62a6d15cb63ffe266ec3cd133245df8947191b2 &&
-      cd ..
+  git clone https://github.com/lv2/sratom.git sratom
+  git -C sratom reset --hard 0dee0bed63f2fe4d8178b9fe6482d1c686a39b0c
 fi
 
 if [ ! -d lilv ]; then
-  git clone http://git.drobilla.net/lilv.git lilv
-  cd lilv &&
-      git reset --hard 23293be2f10fd64ff85eddb50b6aa381694fa3a3 &&
-      cd ..
+  git clone https://github.com/lv2/lilv.git lilv
+  git -C lilv reset --hard 2868c482df9b58bde4934a925456e50114cdcc25
 fi
 
-sed -i "s/bld.add_post_fun(autowaf.run_ldconfig)//" */wscript
-
-# -------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # Build dependency code
 
 if [ ! -f lv2/build-done ]; then
-  cd lv2
-  python3 ./waf configure --prefix="$PREFIX" --no-plugins --copy-headers
-  python3 ./waf build
-  python3 ./waf install
-  cp -r schemas.lv2 "$PREFIX"/lib/lv2/
+  pushd lv2
+  meson setup build \
+    --reconfigure \
+    -Dlibdir="lib" \
+    -Dprefix="${PREFIX}" \
+    -Ddocs=disabled \
+    -Dbundles=true \
+    -Dheaders=true \
+    -Dlint=false \
+    -Dold_headers=true \
+    -Dtests=disabled \
+    -Dtools=enabled
+  ninja -C build
+  ninja -C build install
   touch build-done
-  cd ..
+  popd
 fi
 
-if [ ! -f mod-sdk/build-done ]; then
-  cd mod-sdk
-  cp -r *.lv2 "$PREFIX"/lib/lv2/
+if [ ! -f darkglass-lv2-extensions/build-done ]; then
+  pushd darkglass-lv2-extensions
+  cp -rv dg-meta *.lv2 "${PREFIX}/lib/lv2/"
   touch build-done
-  cd ..
+  popd
 fi
 
-if [ ! -f kxstudio-ext/build-done ]; then
-  cd kxstudio-ext
-  cp -r kx-meta *.lv2 "$PREFIX"/lib/lv2/
+if [ ! -f kxstudio-lv2-extensions/build-done ]; then
+  pushd kxstudio-lv2-extensions
+  cp -rv kx-meta *.lv2 "${PREFIX}/lib/lv2/"
   touch build-done
-  cd ..
+  popd
+fi
+
+if [ ! -f mod-lv2-extensions/build-done ]; then
+  pushd mod-lv2-extensions
+  cp -rv *.lv2 "${PREFIX}/lib/lv2/"
+  touch build-done
+  popd
+fi
+
+if [ ! -f zix/build-done ]; then
+  pushd zix
+  meson setup build \
+    --reconfigure \
+    -Ddefault_library=static \
+    -Dlibdir="lib" \
+    -Dprefix="${PREFIX}" \
+    -Dbenchmarks=disabled \
+    -Ddocs=disabled \
+    -Dhtml=disabled \
+    -Dlint=false \
+    -Dsinglehtml=disabled \
+    -Dtests=disabled \
+    -Dtests_cpp=disabled
+  ninja -C build
+  ninja -C build install
+  touch build-done
+  popd
 fi
 
 if [ ! -f serd/build-done ]; then
-  cd serd
-  python3 ./waf configure --prefix="$PREFIX" --static --no-shared --no-utils
-  python3 ./waf build
-  python3 ./waf install
+  pushd serd
+  meson setup build \
+    --reconfigure \
+    -Ddefault_library=static \
+    -Dlibdir="lib" \
+    -Dprefix="${PREFIX}" \
+    -Ddocs=disabled \
+    -Dhtml=disabled \
+    -Dlint=false \
+    -Dman=disabled \
+    -Dman_html=disabled \
+    -Dsinglehtml=disabled \
+    -Dstatic=true \
+    -Dtests=disabled \
+    -Dtools=disabled
+  ninja -C build
+  ninja -C build install
   touch build-done
-  cd ..
+  popd
 fi
 
 if [ ! -f sord/build-done ]; then
-  cd sord
-  python3 ./waf configure --prefix="$PREFIX" --static --no-shared
-  python3 ./waf build
-  python3 ./waf install
+  pushd sord
+  meson setup build \
+    --reconfigure \
+    -Ddefault_library=static \
+    -Dlibdir="lib" \
+    -Dprefix="${PREFIX}" \
+    -Dbindings_cpp=disabled \
+    -Ddocs=disabled \
+    -Dlint=false \
+    -Dman=disabled \
+    -Dtests=disabled \
+    -Dtools=enabled
+  ninja -C build
+  ninja -C build install
   touch build-done
-  cd ..
+  popd
 fi
 
 if [ ! -f sratom/build-done ]; then
-  cd sratom
-  python3 ./waf configure --prefix="$PREFIX" --static --no-shared
-  python3 ./waf build
-  python3 ./waf install
+  pushd sratom
+  meson setup build \
+    --reconfigure \
+    -Ddefault_library=static \
+    -Dlibdir="lib" \
+    -Dprefix="${PREFIX}" \
+    -Ddocs=disabled \
+    -Dhtml=disabled \
+    -Dlint=false \
+    -Dsinglehtml=disabled \
+    -Dtests=disabled
+  ninja -C build
+  ninja -C build install
   touch build-done
-  cd ..
+  popd
 fi
 
 if [ ! -f lilv/build-done ]; then
-  cd lilv
-  python3 ./waf configure --prefix="$PREFIX" --static --static-progs --no-shared --no-utils --no-bash-completion
-  python3 ./waf build
-  python3 ./waf install
+  pushd lilv
+  meson setup build \
+    --reconfigure \
+    -Ddefault_library=shared \
+    -Dlibdir="lib" \
+    -Dprefix="${PREFIX}" \
+    -Dbindings_cpp=disabled \
+    -Dbindings_py=enabled \
+    -Ddocs=disabled \
+    -Ddynmanifest=disabled \
+    -Dhtml=disabled \
+    -Dlint=false \
+    -Dsinglehtml=disabled \
+    -Dtests=disabled \
+    -Dtools=disabled
+  ninja -C build
+  ninja -C build install
   touch build-done
-  cd ..
+  popd
 fi
 
-sed -i "s/-lserd-0/-lserd-0 -ldl -lm/" "$PKG_CONFIG_PATH"/serd-0.pc
-sed -i "s/-llilv-0/-llilv-0 -lsratom-0 -lsord-0 -lserd-0 -ldl -lm/" "$PKG_CONFIG_PATH"/lilv-0.pc
+sed -i -e 's|CDLL("liblilv|CDLL("/opt/lilvlib/lib/liblilv|' "${PREFIX}/lib/python3/dist-packages/lilv.py"
+rm -rf "${PREFIX}/lib/python3/dist-packages/__pycache__"
 
 # -------------------------------------------------------------------------------------------
 # Build package
 
-cd "$OLDDIR/python3-lilv-pkg"
-cp -r "$BASEDIR"/lilv/* .
-patch -p1 -i debian/patches/fix-link.patch
-fakeroot debian/rules clean
+pushd "${OLDDIR}/python3-lilv-pkg"
+
+mv "${BASEDIR}/system" system
+mkdir -p system/usr/bin
+mkdir -p system/usr/lib/python3/dist-packages/lilvlib
+
+install -m 755 ../lv2_validate_mod system/usr/bin/
+install -m 644 ../lilvlib/*.py system/usr/lib/python3/dist-packages/lilvlib/
+
+mv system/opt/lilvlib/lib/python3/dist-packages/lilv.py system/usr/lib/python3/dist-packages/
+
+rm -rf system/opt/lilvlib/include
+rm -rf system/opt/lilvlib/lib/pkgconfig
+rm -rf system/opt/lilvlib/lib/python3
+rm -rf system/opt/lilvlib/lib/*.a
+
 fakeroot debian/rules binary
 fakeroot debian/rules clean
 
 # if the above commands fail, try these:
-# debuild clean
 # debuild binary
 # debuild clean
+
+popd
 
 # -------------------------------------------------------------------------------------------
 # Cleanup
 
-rm -rf "$BASEDIR"
-
-cd "$OLDDIR/python3-lilv-pkg"
-mv debian ..
-rm -rf *
-mv ../debian .
+rm -rf "${BASEDIR}"
+rm -rf "${OLDDIR}/python3-lilv-pkg/system"
 
 # -------------------------------------------------------------------------------------------

@@ -17,7 +17,7 @@ def main():
         version=version,
         description='A set of helper methods to extract plugin and pedalboard data from TTLs using lilv',
         author='Falktx',
-        author_email='falktx@gmail.com',
+        author_email='falktx@mod.audio',
         license='MIT',
         packages=['lilvlib'],
         install_requires=[],  # lilv must be installed locally but cannot be resolved by PIP
@@ -29,7 +29,7 @@ def main():
             'Operating System :: OS Independent',
             'Programming Language :: Python',
         ],
-        url='https://github.com/moddevices/lilvlib',
+        url='https://github.com/mod-audio/lilvlib',
     )
 
 
