@@ -13,17 +13,14 @@ from math import fmod
 # ------------------------------------------------------------------------------------------------------------
 # Definitions
 
-PREFIX_LV2CORE = "http://lv2plug.in/ns/lv2core#"
-PREFIX_MOD     = "http://moddevices.com/ns/mod#"
+PREFIX_INGEN    = "http://drobilla.net/ns/ingen#"
+PREFIX_LV2CORE  = "http://lv2plug.in/ns/lv2core#"
+PREFIX_MOD      = "http://moddevices.com/ns/mod#"
+PREFIX_MODGUI   = "http://moddevices.com/ns/modgui#"
+PREFIX_MODPEDAL = "http://moddevices.com/ns/modpedal#"
 
 # ------------------------------------------------------------------------------------------------------------
 # Utilities
-
-def LILV_FOREACH(collection, func):
-    itr = collection.begin()
-    while itr:
-        yield func(collection.get(itr))
-        itr = collection.next(itr)
 
 class NS(object):
     def __init__(self, world, base):
@@ -35,11 +32,28 @@ class NS(object):
         if attr.endswith("_"):
             attr = attr[:-1]
         if attr not in self._cache:
-            self._cache[attr] = lilv.Node(self.world.new_uri(self.base+attr))
+            self._cache[attr] = self.world.new_uri(self.base + attr)
         return self._cache[attr]
 
 def is_integer(string):
     return string.strip().lstrip("-+").isdigit()
+
+def first_or(nodes, fallback):
+    first = next(iter(nodes), None)
+    return first if first is not None else fallback
+
+def int_first_or(nodes):
+    first = next(iter(nodes), None)
+    return int(first) if first is not None else 0
+
+def str_first_or(nodes):
+    if nodes is None:
+        return ""
+    first = next(iter(nodes), None)
+    return str(first) if first is not None else ""
+
+def str_or(node):
+    return str(node) if node is not None else ""
 
 def get_short_port_name(portName):
     if len(portName) <= 16:
@@ -59,6 +73,9 @@ def get_short_port_name(portName):
 # ------------------------------------------------------------------------------------------------------------
 
 def get_category(nodes):
+    if nodes is None:
+        return []
+
     lv2_category_indexes = {
         'DelayPlugin': ['Delay'],
         'DistortionPlugin': ['Distortion'],
@@ -114,45 +131,40 @@ def get_category(nodes):
         'ControlVoltagePlugin': ['ControlVoltage'],
     }
 
-    def fill_in_lv2_category(node):
-        category = node.as_string().replace(PREFIX_LV2CORE,"")
-        if category in lv2_category_indexes.keys():
-            return lv2_category_indexes[category]
-        return []
+    def fill_in_lv2_categories(nodes):
+        cats = []
+        for node in nodes:
+            category = str(node).replace(PREFIX_LV2CORE,"")
+            if category in lv2_category_indexes.keys():
+                cats += lv2_category_indexes[category]
+        return cats
 
-    def fill_in_mod_category(node):
-        category = node.as_string().replace(PREFIX_MOD,"")
-        if category in mod_category_indexes.keys():
-            return mod_category_indexes[category]
-        return []
+    def fill_in_mod_categories(nodes):
+        cats = []
+        for node in nodes:
+            category = str(node).replace(PREFIX_MOD,"")
+            if category in mod_category_indexes.keys():
+                cats += mod_category_indexes[category]
+        return cats
 
     categories = []
-    for cat in [cat for catlist in LILV_FOREACH(nodes, fill_in_mod_category) for cat in catlist]:
+
+    # find MOD category first, takes precedence
+    for cat in fill_in_mod_categories(nodes):
         if cat not in categories:
             categories.append(cat)
 
     if len(categories) > 0:
         return categories
 
-    for cat in [cat for catlist in LILV_FOREACH(nodes, fill_in_lv2_category) for cat in catlist]:
+    for cat in fill_in_lv2_categories(nodes):
         if cat not in categories:
             categories.append(cat)
 
     return categories
 
 def get_port_data(port, subj):
-    nodes = port.get_value(subj.me)
-    data  = []
-
-    it = lilv.lilv_nodes_begin(nodes)
-    while not lilv.lilv_nodes_is_end(nodes, it):
-        dat = lilv.lilv_nodes_get(nodes, it)
-        it  = lilv.lilv_nodes_next(nodes, it)
-        if dat is None:
-            continue
-        data.append(lilv.lilv_node_as_string(dat))
-
-    return data
+    return [str(node) for node in port.get_value(subj)]
 
 def get_port_unit(miniuri):
   # using label, render, symbol
@@ -191,10 +203,12 @@ def get_port_unit(miniuri):
 # get_bundle_dirname
 
 def get_bundle_dirname(bundleuri):
-    bundle = lilv.lilv_uri_to_path(bundleuri)
+    world = lilv.World()
+    bundle = str(world.new_uri(bundleuri).get_path())
 
     if not os.path.exists(bundle):
         raise IOError(bundleuri)
+
     if os.path.isfile(bundle):
         bundle = os.path.dirname(bundle)
 
@@ -216,31 +230,23 @@ def get_pedalboard_info(bundle):
     world = lilv.World()
 
     # this is needed when loading specific bundles instead of load_all
-    # (these functions are not exposed via World yet)
-    lilv.lilv_world_load_specifications(world.me)
-    lilv.lilv_world_load_plugin_classes(world.me)
+    world.load_specifications()
+    world.load_plugin_classes()
 
     # convert bundle string into a lilv node
-    bundlenode = lilv.lilv_new_file_uri(world.me, None, bundle)
+    bundlenode = world.new_file_uri(None, bundle)
 
     # load the bundle
     world.load_bundle(bundlenode)
-
-    # free bundlenode, no longer needed
-    lilv.lilv_node_free(bundlenode)
 
     # get all plugins in the bundle
     plugins = world.get_all_plugins()
 
     # make sure the bundle includes 1 and only 1 plugin (the pedalboard)
-    if plugins.size() != 1:
+    if len(plugins) != 1:
         raise Exception('get_pedalboard_info(%s) - bundle has 0 or > 1 plugin'.format(bundle))
 
-    # no indexing in python-lilv yet, just get the first item
-    plugin = None
-    for p in plugins:
-        plugin = p
-        break
+    plugin = first_or(plugins, None)
 
     if plugin is None:
         raise Exception('get_pedalboard_info(%s) - failed to get plugin, you are using an old lilv!'.format(bundle))
@@ -248,14 +254,12 @@ def get_pedalboard_info(bundle):
     # define the needed stuff
     ns_rdf      = NS(world, lilv.LILV_NS_RDF)
     ns_lv2core  = NS(world, lilv.LILV_NS_LV2)
-    ns_ingen    = NS(world, "http://drobilla.net/ns/ingen#")
-    ns_mod      = NS(world, "http://moddevices.com/ns/mod#")
-    ns_modpedal = NS(world, "http://moddevices.com/ns/modpedal#")
+    ns_ingen    = NS(world, PREFIX_INGEN)
+    ns_mod      = NS(world, PREFIX_MOD)
+    ns_modpedal = NS(world, PREFIX_MODPEDAL)
 
     # check if the plugin is a pedalboard
-    def fill_in_type(node):
-        return node.as_string()
-    plugin_types = [i for i in LILV_FOREACH(plugin.get_value(ns_rdf.type_), fill_in_type)]
+    plugin_types = tuple(str(node) for node in plugin.get_value(ns_rdf.type_))
 
     if "http://moddevices.com/ns/modpedal#Pedalboard" not in plugin_types:
         raise Exception('get_pedalboard_info(%s) - plugin has no mod:Pedalboard type'.format(bundle))
@@ -265,12 +269,12 @@ def get_pedalboard_info(bundle):
     ingenblocks = []
 
     info = {
-        'name'  : plugin.get_name().as_string(),
-        'uri'   : plugin.get_uri().as_string(),
-        'author': plugin.get_author_name().as_string() or "", # Might be empty
+        'name'  : str(plugin.get_name()),
+        'uri'   : str(plugin.get_uri()),
+        'author': str_or(plugin.get_author_name()), # Might be empty
         'unit': {
-            'name': plugin.get_value(ns_modpedal.unitName).get_first().as_string() or "",
-            'model': plugin.get_value(ns_modpedal.unitModel).get_first().as_string() or "",
+            'name': str_first_or(plugin.get_value(ns_modpedal.unitName)),
+            'model': str_first_or(plugin.get_value(ns_modpedal.unitModel)),
         },
         'hardware': {
             # we save this info later
@@ -288,25 +292,19 @@ def get_pedalboard_info(bundle):
              },
         },
         'size': {
-            'width' : plugin.get_value(ns_modpedal.width).get_first().as_int(),
-            'height': plugin.get_value(ns_modpedal.height).get_first().as_int(),
+            'width' : int_first_or(plugin.get_value(ns_modpedal.width)),
+            'height': int_first_or(plugin.get_value(ns_modpedal.height)),
         },
-        'screenshot' : os.path.basename(plugin.get_value(ns_modpedal.screenshot).get_first().as_string() or ""),
-        'thumbnail'  : os.path.basename(plugin.get_value(ns_modpedal.thumbnail).get_first().as_string() or ""),
+        'screenshot' : os.path.basename(str_first_or(plugin.get_value(ns_modpedal.screenshot))),
+        'thumbnail'  : os.path.basename(str_first_or(plugin.get_value(ns_modpedal.thumbnail))),
         'connections': [], # we save this info later
         'plugins'    : [], # we save this info later
     }
 
     # handle unit name and model for old pedalboards
     if not info['unit']['name']:
-        ports = plugin.get_value(ns_lv2core.port)
-        it = ports.begin()
-        while not ports.is_end(it):
-            port = ports.get(it)
-            it   = ports.next(it)
-            if port.me is None:
-                continue
-            if port.as_uri().endswith(("/midi_legacy_mode", "/midi_separated_mode")):
+        for port in plugin.get_value(ns_lv2core.port):
+            if str(port).endswith(("/midi_legacy_mode", "/midi_separated_mode")):
                 isDuoX = True
                 break
         else:
@@ -324,39 +322,23 @@ def get_pedalboard_info(bundle):
             }
 
     # connections
-    arcs = plugin.get_value(ns_ingen.arc)
-    it = arcs.begin()
-    while not arcs.is_end(it):
-        arc = arcs.get(it)
-        it  = arcs.next(it)
-
-        if arc.me is None:
-            continue
-
-        head = lilv.lilv_world_get(world.me, arc.me, ns_ingen.head.me, None)
-        tail = lilv.lilv_world_get(world.me, arc.me, ns_ingen.tail.me, None)
+    for arc in plugin.get_value(ns_ingen.arc):
+        head = world.get(arc, ns_ingen.head, None)
+        tail = world.get(arc, ns_ingen.tail, None)
 
         if head is None or tail is None:
             continue
 
         ingenarcs.append({
-            "source": lilv.lilv_uri_to_path(lilv.lilv_node_as_string(tail)).replace(bundle,"",1),
-            "target": lilv.lilv_uri_to_path(lilv.lilv_node_as_string(head)).replace(bundle,"",1)
+            "source": tail.get_path().replace(bundle,"",1),
+            "target": head.get_path().replace(bundle,"",1)
         })
 
     # hardware ports
     handled_port_uris = []
-    ports = plugin.get_value(ns_lv2core.port)
-    it = ports.begin()
-    while not ports.is_end(it):
-        port = ports.get(it)
-        it   = ports.next(it)
-
-        if port.me is None:
-            continue
-
+    for port in plugin.get_value(ns_lv2core.port):
         # check if we already handled this port
-        port_uri = port.as_uri()
+        port_uri = str(port)
         if port_uri in handled_port_uris:
             continue
         if port_uri.endswith("/control_in") or port_uri.endswith("/control_out"):
@@ -364,7 +346,7 @@ def get_pedalboard_info(bundle):
         handled_port_uris.append(port_uri)
 
         # get types
-        port_types = lilv.lilv_world_find_nodes(world.me, port.me, ns_rdf.type_.me, None)
+        port_types = world.find_nodes(port, ns_rdf.type_, None)
 
         if port_types is None:
             continue
@@ -372,15 +354,8 @@ def get_pedalboard_info(bundle):
         portDir  = "" # input or output
         portType = "" # atom, audio or cv
 
-        it2 = lilv.lilv_nodes_begin(port_types)
-        while not lilv.lilv_nodes_is_end(port_types, it2):
-            port_type = lilv.lilv_nodes_get(port_types, it2)
-            it2 = lilv.lilv_nodes_next(port_types, it2)
-
-            if port_type is None:
-                continue
-
-            port_type_uri = lilv.lilv_node_as_uri(port_type)
+        for port_type in port_types:
+            port_type_uri = str(port_type)
 
             if port_type_uri == (PREFIX_LV2CORE + "InputPort"):
                 portDir = "input"
@@ -415,17 +390,9 @@ def get_pedalboard_info(bundle):
                 info['hardware']['cv']['outs'] += 1
 
     # plugins
-    blocks = plugin.get_value(ns_ingen.block)
-    it = blocks.begin()
-    while not blocks.is_end(it):
-        block = blocks.get(it)
-        it    = blocks.next(it)
-
-        if block.me is None:
-            continue
-
-        protouri1 = lilv.lilv_world_get(world.me, block.me, ns_lv2core.prototype.me, None)
-        protouri2 = lilv.lilv_world_get(world.me, block.me, ns_ingen.prototype.me, None)
+    for block in plugin.get_value(ns_ingen.block):
+        protouri1 = world.get(block, ns_lv2core.prototype, None)
+        protouri2 = world.get(block, ns_ingen.prototype, None)
 
         if protouri1 is not None:
             proto = protouri1
@@ -434,31 +401,31 @@ def get_pedalboard_info(bundle):
         else:
             continue
 
-        instance = lilv.lilv_uri_to_path(lilv.lilv_node_as_string(block.me)).replace(bundle,"",1)
-        uri      = lilv.lilv_node_as_uri(proto)
+        instance = block.get_path().replace(bundle,"",1)
+        uri      = str(proto)
 
-        x        = lilv.lilv_world_get(world.me, block.me, ns_ingen.canvasX.me, None)
-        y        = lilv.lilv_world_get(world.me, block.me, ns_ingen.canvasY.me, None)
-        enabled  = lilv.lilv_world_get(world.me, block.me, ns_ingen.enabled.me, None)
-        builder  = lilv.lilv_world_get(world.me, block.me, ns_mod.builderVersion.me, None)
-        release  = lilv.lilv_world_get(world.me, block.me, ns_mod.releaseNumber.me, None)
-        minorver = lilv.lilv_world_get(world.me, block.me, ns_lv2core.minorVersion.me, None)
-        microver = lilv.lilv_world_get(world.me, block.me, ns_lv2core.microVersion.me, None)
-        buildId  = lilv.lilv_world_get(world.me, block.me, ns_mod.buildId.me, None)
-        buildEnv = lilv.lilv_world_get(world.me, block.me, ns_mod.buildEnvironment.me, None)
+        x        = world.get(block, ns_ingen.canvasX, None)
+        y        = world.get(block, ns_ingen.canvasY, None)
+        enabled  = world.get(block, ns_ingen.enabled, None)
+        builder  = world.get(block, ns_mod.builderVersion, None)
+        release  = world.get(block, ns_mod.releaseNumber, None)
+        minorver = world.get(block, ns_lv2core.minorVersion, None)
+        microver = world.get(block, ns_lv2core.microVersion, None)
+        buildId  = world.get(block, ns_mod.buildId, None)
+        buildEnv = world.get(block, ns_mod.buildEnvironment, None)
 
         ingenblocks.append({
             "instance": instance,
             "uri"     : uri,
-            "x"       : lilv.lilv_node_as_float(x),
-            "y"       : lilv.lilv_node_as_float(y),
-            "enabled" : lilv.lilv_node_as_bool(enabled) if enabled is not None else False,
-            "builder" : lilv.lilv_node_as_int(builder) if builder else 0,
-            "release" : lilv.lilv_node_as_int(release) if release else 0,
-            "minorVersion": lilv.lilv_node_as_int(minorver) if minorver else 0,
-            "microVersion": lilv.lilv_node_as_int(microver) if microver else 0,
-            "buildId"         : lilv.lilv_node_as_string(buildId),
-            "buildEnvironment": lilv.lilv_node_as_string(buildEnv),
+            "x"       : float(x),
+            "y"       : float(y),
+            "enabled" : bool(enabled) if enabled is not None else False,
+            "builder" : int(builder) if builder is not None else 0,
+            "release" : int(release) if release is not None else 0,
+            "minorVersion": int(minorver) if minorver is not None else 0,
+            "microVersion": int(microver) if microver is not None else 0,
+            "buildId"         : str(buildId) if buildId is not None else "",
+            "buildEnvironment": str(buildEnv) if buildEnv is not None else "",
         })
 
     info['connections'] = ingenarcs
@@ -482,47 +449,37 @@ def get_pedalboard_name(bundle):
     world = lilv.World()
 
     # this is needed when loading specific bundles instead of load_all
-    # (these functions are not exposed via World yet)
-    lilv.lilv_world_load_specifications(world.me)
-    lilv.lilv_world_load_plugin_classes(world.me)
+    world.load_specifications()
+    world.load_plugin_classes()
 
     # convert bundle string into a lilv node
-    bundlenode = lilv.lilv_new_file_uri(world.me, None, bundle)
+    bundlenode = world.new_file_uri(None, bundle)
 
     # load the bundle
     world.load_bundle(bundlenode)
-
-    # free bundlenode, no longer needed
-    lilv.lilv_node_free(bundlenode)
 
     # get all plugins in the bundle
     plugins = world.get_all_plugins()
 
     # make sure the bundle includes 1 and only 1 plugin (the pedalboard)
-    if plugins.size() != 1:
+    if len(plugins) != 1:
         raise Exception('get_pedalboard_info(%s) - bundle has 0 or > 1 plugin'.format(bundle))
 
-    # no indexing in python-lilv yet, just get the first item
-    plugin = None
-    for p in plugins:
-        plugin = p
-        break
+    plugin = first_or(plugins, None)
 
     if plugin is None:
-        raise Exception('get_pedalboard_info(%s) - failed to get plugin, you are using an old lilv!'.format(bundle))
+        raise Exception('get_pedalboard_info(%s) - failed to get plugin'.format(bundle))
 
     # define the needed stuff
     ns_rdf = NS(world, lilv.LILV_NS_RDF)
 
     # check if the plugin is a pedalboard
-    def fill_in_type(node):
-        return node.as_string()
-    plugin_types = [i for i in LILV_FOREACH(plugin.get_value(ns_rdf.type_), fill_in_type)]
+    plugin_types = tuple(str(node) for node in plugin.get_value(ns_rdf.type_))
 
     if "http://moddevices.com/ns/modpedal#Pedalboard" not in plugin_types:
         raise Exception('get_pedalboard_info(%s) - plugin has no mod:Pedalboard type'.format(bundle))
 
-    return plugin.get_name().as_string()
+    return str(plugin.get_name())
 
 # ------------------------------------------------------------------------------------------------------------
 # plugin_has_modgui
@@ -530,43 +487,35 @@ def get_pedalboard_name(bundle):
 # Check if a plugin has modgui
 def plugin_has_modgui(world, plugin):
     # define the needed stuff
-    ns_modgui = NS(world, "http://moddevices.com/ns/modgui#")
+    ns_modgui = NS(world, PREFIX_MODGUI)
 
     # --------------------------------------------------------------------------------------------------------
     # get the proper modgui
 
     modguigui = None
 
-    nodes = plugin.get_value(ns_modgui.gui)
-    it    = nodes.begin()
-    while not nodes.is_end(it):
-        mgui = nodes.get(it)
-        it   = nodes.next(it)
-        if mgui.me is None:
-            continue
-        resdir = world.find_nodes(mgui.me, ns_modgui.resourcesDirectory.me, None).get_first()
-        if resdir.me is None:
+    for mgui in plugin.get_value(ns_modgui.gui):
+        resdir = first_or(world.find_nodes(mgui, ns_modgui.resourcesDirectory, None), None)
+        if resdir is None:
             continue
         modguigui = mgui
-        if os.path.expanduser("~") in lilv.lilv_uri_to_path(resdir.as_string()):
+        if resdir.get_path().startswith(os.path.expanduser("~")):
             # found a modgui in the home dir, stop here and use it
             break
-
-    del nodes, it
 
     # --------------------------------------------------------------------------------------------------------
     # check selected modgui
 
-    if modguigui is None or modguigui.me is None:
+    if modguigui is None:
         return False
 
     # resourcesDirectory *must* be present
-    modgui_resdir = world.find_nodes(modguigui.me, ns_modgui.resourcesDirectory.me, None).get_first()
+    modgui_resdir = first_or(world.find_nodes(modguigui, ns_modgui.resourcesDirectory, None), None)
 
-    if modgui_resdir.me is None:
+    if modgui_resdir is None:
         return False
 
-    return os.path.exists(lilv.lilv_uri_to_path(modgui_resdir.as_string()))
+    return os.path.exists(modgui_resdir.get_path())
 
 # ------------------------------------------------------------------------------------------------------------
 # get_plugin_info
@@ -586,11 +535,12 @@ def get_plugin_info(world, plugin, useAbsolutePath = True):
     ns_pprops  = NS(world, "http://lv2plug.in/ns/ext/port-props#")
     ns_pset    = NS(world, "http://lv2plug.in/ns/ext/presets#")
     ns_units   = NS(world, "http://lv2plug.in/ns/extensions/units#")
-    ns_mod     = NS(world, "http://moddevices.com/ns/mod#")
-    ns_modgui  = NS(world, "http://moddevices.com/ns/modgui#")
+    ns_mod     = NS(world, PREFIX_MOD)
+    ns_modgui  = NS(world, PREFIX_MODGUI)
 
-    bundleuri = plugin.get_bundle_uri().as_string()
-    bundle    = lilv.lilv_uri_to_path(bundleuri)
+    bundleuri = plugin.get_bundle_uri()
+    bundle    = bundleuri.get_path()
+    bundleuri = str(bundleuri)
 
     errors   = []
     warnings = []
@@ -598,7 +548,7 @@ def get_plugin_info(world, plugin, useAbsolutePath = True):
     # --------------------------------------------------------------------------------------------------------
     # uri
 
-    uri = plugin.get_uri().as_string() or ""
+    uri = str(plugin.get_uri())
 
     if not uri:
         errors.append("plugin uri is missing or invalid")
@@ -610,7 +560,7 @@ def get_plugin_info(world, plugin, useAbsolutePath = True):
     # --------------------------------------------------------------------------------------------------------
     # name
 
-    name = plugin.get_name().as_string() or ""
+    name = str(plugin.get_name())
 
     if not name:
         errors.append("plugin name is missing")
@@ -618,7 +568,7 @@ def get_plugin_info(world, plugin, useAbsolutePath = True):
     # --------------------------------------------------------------------------------------------------------
     # binary
 
-    binary = lilv.lilv_uri_to_path(plugin.get_library_uri().as_string() or "")
+    binary = plugin.get_library_uri().get_path()
 
     if not binary:
         errors.append("plugin binary is missing")
@@ -628,28 +578,16 @@ def get_plugin_info(world, plugin, useAbsolutePath = True):
     # --------------------------------------------------------------------------------------------------------
     # license
 
-    licenses = []
-    nodes    = plugin.get_value(ns_doap.license)
-    it       = nodes.begin()
-
-    while not nodes.is_end(it):
-        licenses.append(nodes.get(it).as_string())
-        it = nodes.next(it)
-
-    del nodes, it
+    licenses = tuple(str(node) for node in plugin.get_value(ns_doap.license))
 
     if len(licenses) > 0:
         license = sorted(licenses)[0]
 
     else:
         license = ""
-        project = plugin.get_value(ns_lv2core.project).get_first()
-        if project.me is not None:
-            licsnode = lilv.lilv_world_get(world.me, project.me, ns_doap.license.me, None)
-            if licsnode is not None:
-                license = lilv.lilv_node_as_string(licsnode)
-            del licsnode
-        del project
+        project = first_or(plugin.get_value(ns_lv2core.project), None)
+        if project is not None:
+            license = str_first_or(world.get(project, ns_doap.license, None))
 
     if not license:
         errors.append("plugin license is missing")
@@ -661,7 +599,7 @@ def get_plugin_info(world, plugin, useAbsolutePath = True):
     # --------------------------------------------------------------------------------------------------------
     # comment
 
-    comment = (plugin.get_value(ns_rdfs.comment).get_first().as_string() or "").strip()
+    comment = str_first_or(plugin.get_value(ns_rdfs.comment)).strip()
 
     # sneaky empty comments!
     if len(comment) > 0 and comment == len(comment) * comment[0]:
@@ -673,29 +611,26 @@ def get_plugin_info(world, plugin, useAbsolutePath = True):
     # --------------------------------------------------------------------------------------------------------
     # version
 
-    microver = plugin.get_value(ns_lv2core.microVersion).get_first()
-    minorver = plugin.get_value(ns_lv2core.minorVersion).get_first()
+    microver = first_or(plugin.get_value(ns_lv2core.microVersion), None)
+    minorver = first_or(plugin.get_value(ns_lv2core.minorVersion), None)
 
-    if microver.me is None and minorver.me is None:
+    if microver is None and minorver is None:
         errors.append("plugin is missing version information")
         minorVersion = 0
         microVersion = 0
 
     else:
-        if minorver.me is None:
+        if minorver is None:
             errors.append("plugin is missing minorVersion")
             minorVersion = 0
         else:
-            minorVersion = minorver.as_int()
+            minorVersion = int(minorver)
 
-        if microver.me is None:
+        if microver is None:
             errors.append("plugin is missing microVersion")
             microVersion = 0
         else:
-            microVersion = microver.as_int()
-
-    del minorver
-    del microver
+            microVersion = int(microver)
 
     version = "%d.%d" % (minorVersion, microVersion)
 
@@ -715,25 +650,22 @@ def get_plugin_info(world, plugin, useAbsolutePath = True):
     # author
 
     author = {
-        'name'    : plugin.get_author_name().as_string() or "",
-        'homepage': plugin.get_author_homepage().as_string() or "",
-        'email'   : plugin.get_author_email().as_string() or "",
+        'name'    : str_or(plugin.get_author_name()),
+        'homepage': str_or(plugin.get_author_homepage()),
+        'email'   : str_or(plugin.get_author_email()),
     }
 
     if not author['name']:
         errors.append("plugin author name is missing")
 
     if not author['homepage']:
-        prj = plugin.get_value(ns_lv2core.project).get_first()
-        if prj.me is not None:
-            maintainer = lilv.lilv_world_get(world.me, prj.me, ns_doap.maintainer.me, None)
+        prj = first_or(plugin.get_value(ns_lv2core.project), None)
+        if prj is not None:
+            maintainer = world.get(prj, ns_doap.maintainer, None)
             if maintainer is not None:
-                homepage = lilv.lilv_world_get(world.me, maintainer, ns_foaf.homepage.me, None)
+                homepage = world.get(maintainer, ns_foaf.homepage, None)
                 if homepage is not None:
-                    author['homepage'] = lilv.lilv_node_as_string(homepage)
-                del homepage
-            del maintainer
-        del prj
+                    author['homepage'] = str(homepage)
 
     if not author['homepage']:
         warnings.append("plugin author homepage is missing")
@@ -749,7 +681,7 @@ def get_plugin_info(world, plugin, useAbsolutePath = True):
     # --------------------------------------------------------------------------------------------------------
     # brand
 
-    brand = plugin.get_value(ns_mod.brand).get_first().as_string() or ""
+    brand = str_first_or(plugin.get_value(ns_mod.brand))
 
     if not brand:
         brand = author['name'].split(" - ",1)[0].split(" ",1)[0]
@@ -765,7 +697,7 @@ def get_plugin_info(world, plugin, useAbsolutePath = True):
     # --------------------------------------------------------------------------------------------------------
     # label
 
-    label = plugin.get_value(ns_mod.label).get_first().as_string() or ""
+    label = str_first_or(plugin.get_value(ns_mod.label))
 
     if not label:
         if len(name) <= 16:
@@ -781,7 +713,6 @@ def get_plugin_info(world, plugin, useAbsolutePath = True):
                 label = label[:16]
 
             warnings.append("plugin label is missing")
-            del labels
 
     elif len(label) > 16:
         label = label[:16]
@@ -793,19 +724,8 @@ def get_plugin_info(world, plugin, useAbsolutePath = True):
     bundles = []
 
     if useAbsolutePath:
-        bnodes = lilv.lilv_plugin_get_data_uris(plugin.me)
-
-        it = lilv.lilv_nodes_begin(bnodes)
-        while not lilv.lilv_nodes_is_end(bnodes, it):
-            bnode = lilv.lilv_nodes_get(bnodes, it)
-            it    = lilv.lilv_nodes_next(bnodes, it)
-
-            if bnode is None:
-                continue
-            if not lilv.lilv_node_is_uri(bnode):
-                continue
-
-            bpath = os.path.abspath(os.path.dirname(lilv.lilv_uri_to_path(lilv.lilv_node_as_uri(bnode))))
+        for bnode in plugin.get_data_uris():
+            bpath = os.path.abspath(os.path.dirname(bnode.get_path()))
 
             if not bpath.endswith(os.sep):
                 bpath += os.sep
@@ -816,112 +736,98 @@ def get_plugin_info(world, plugin, useAbsolutePath = True):
         if bundle not in bundles:
             bundles.append(bundle)
 
-        del bnodes, it
-
     # --------------------------------------------------------------------------------------------------------
     # get the proper modgui
 
     modguigui = None
 
-    nodes = plugin.get_value(ns_modgui.gui)
-    it    = nodes.begin()
-    while not nodes.is_end(it):
-        mgui = nodes.get(it)
-        it   = nodes.next(it)
-        if mgui.me is None:
-            continue
-        resdir = world.find_nodes(mgui.me, ns_modgui.resourcesDirectory.me, None).get_first()
-        if resdir.me is None:
+    for mgui in plugin.get_value(ns_modgui.gui):
+        resdir = first_or(world.find_nodes(mgui, ns_modgui.resourcesDirectory, None), None)
+        if resdir is None:
             continue
         modguigui = mgui
         if not useAbsolutePath:
             # special build, use first modgui found
             break
-        if os.path.expanduser("~") in lilv.lilv_uri_to_path(resdir.as_string()):
+        if resdir.get_path().startswith(os.path.expanduser("~")):
             # found a modgui in the home dir, stop here and use it
             break
-
-    del nodes, it
 
     # --------------------------------------------------------------------------------------------------------
     # gui
 
     gui = {}
 
-    if modguigui is None or modguigui.me is None:
+    if modguigui is None:
         warnings.append("no modgui available")
 
     else:
         # resourcesDirectory *must* be present
-        modgui_resdir = world.find_nodes(modguigui.me, ns_modgui.resourcesDirectory.me, None).get_first()
+        modgui_resdir = first_or(world.find_nodes(modguigui, ns_modgui.resourcesDirectory, None), None)
 
-        if modgui_resdir.me is None:
+        if modgui_resdir is None:
             errors.append("modgui has no resourcesDirectory data")
 
         else:
             if useAbsolutePath:
-                gui['resourcesDirectory'] = lilv.lilv_uri_to_path(modgui_resdir.as_string())
+                gui['resourcesDirectory'] = modgui_resdir.get_path()
 
                 # check if modgui is defined in a separate file
                 gui['usingSeeAlso'] = os.path.exists(os.path.join(bundle, "modgui.ttl"))
 
                 # check if the modgui definition is on its own file and in the user dir
                 gui['modificableInPlace'] = bool((bundle not in gui['resourcesDirectory'] or gui['usingSeeAlso']) and
-                                                os.path.expanduser("~") in gui['resourcesDirectory'])
+                                                 gui['resourcesDirectory'].startswith(os.path.expanduser("~")))
             else:
-                gui['resourcesDirectory'] = modgui_resdir.as_string().replace(bundleuri,"",1)
+                gui['resourcesDirectory'] = str(modgui_resdir).replace(bundleuri,"",1)
 
             # icon and settings templates
-            modgui_icon  = world.find_nodes(modguigui.me, ns_modgui.iconTemplate    .me, None).get_first()
-            modgui_setts = world.find_nodes(modguigui.me, ns_modgui.settingsTemplate.me, None).get_first()
+            modgui_icon = first_or(world.find_nodes(modguigui, ns_modgui.iconTemplate, None), None)
+            modgui_setts = first_or(world.find_nodes(modguigui, ns_modgui.settingsTemplate, None), None)
 
-            if modgui_icon.me is None:
+            if modgui_icon is None:
                 errors.append("modgui has no iconTemplate data")
             else:
-                iconFile = lilv.lilv_uri_to_path(modgui_icon.as_string())
+                iconFile = modgui_icon.get_path()
                 if os.path.exists(iconFile):
                     gui['iconTemplate'] = iconFile if useAbsolutePath else iconFile.replace(bundle,"",1)
                 else:
                     errors.append("modgui iconTemplate file is missing")
-                del iconFile
 
-            if modgui_setts.me is not None:
-                settingsFile = lilv.lilv_uri_to_path(modgui_setts.as_string())
+            if modgui_setts is not None:
+                settingsFile = modgui_setts.get_path()
                 if os.path.exists(settingsFile):
                     gui['settingsTemplate'] = settingsFile if useAbsolutePath else settingsFile.replace(bundle,"",1)
                 else:
                     errors.append("modgui settingsTemplate file is missing")
-                del settingsFile
 
             # javascript and stylesheet files
-            modgui_script = world.find_nodes(modguigui.me, ns_modgui.javascript.me, None).get_first()
-            modgui_style  = world.find_nodes(modguigui.me, ns_modgui.stylesheet.me, None).get_first()
+            modgui_script = first_or(world.find_nodes(modguigui, ns_modgui.javascript, None), None)
+            modgui_style = first_or(world.find_nodes(modguigui, ns_modgui.stylesheet, None), None)
 
-            if modgui_script.me is not None:
-                javascriptFile = lilv.lilv_uri_to_path(modgui_script.as_string())
+            if modgui_script is not None:
+                javascriptFile = modgui_script.get_path()
                 if os.path.exists(javascriptFile):
                     gui['javascript'] = javascriptFile if useAbsolutePath else javascriptFile.replace(bundle,"",1)
                 else:
                     errors.append("modgui javascript file is missing")
-                del javascriptFile
 
-            if modgui_style.me is None:
+            if modgui_style is None:
                 errors.append("modgui has no stylesheet data")
             else:
-                stylesheetFile = lilv.lilv_uri_to_path(modgui_style.as_string())
+                stylesheetFile = modgui_style.get_path()
                 if os.path.exists(stylesheetFile):
                     gui['stylesheet'] = stylesheetFile if useAbsolutePath else stylesheetFile.replace(bundle,"",1)
                 else:
                     errors.append("modgui stylesheet file is missing")
-                del stylesheetFile
 
             # template data for backwards compatibility
             # FIXME remove later once we got rid of all templateData files
-            modgui_templ = world.find_nodes(modguigui.me, ns_modgui.templateData.me, None).get_first()
+            modgui_templ = first_or(world.find_nodes(modguigui, ns_modgui.templateData, None), None)
 
-            if modgui_templ.me is not None:
+            if modgui_templ is not None:
                 warnings.append("modgui is using old deprecated templateData")
-                templFile = lilv.lilv_uri_to_path(modgui_templ.as_string())
+                templFile = modgui_templ.get_path()
                 if os.path.exists(templFile):
                     with open(templFile, 'r') as fd:
                         try:
@@ -949,14 +855,13 @@ def get_plugin_info(world, plugin, useAbsolutePath = True):
                                 })
                                 index += 1
                             gui['ports'] = ports
-                del templFile
 
             # screenshot and thumbnail
-            modgui_scrn  = world.find_nodes(modguigui.me, ns_modgui.screenshot.me, None).get_first()
-            modgui_thumb = world.find_nodes(modguigui.me, ns_modgui.thumbnail .me, None).get_first()
+            modgui_scrn = first_or(world.find_nodes(modguigui, ns_modgui.screenshot, None), None)
+            modgui_thumb = first_or(world.find_nodes(modguigui, ns_modgui.thumbnail , None), None)
 
-            if modgui_scrn.me is not None:
-                gui['screenshot'] = lilv.lilv_uri_to_path(modgui_scrn.as_string())
+            if modgui_scrn is not None:
+                gui['screenshot'] = modgui_scrn.get_path()
                 if not os.path.exists(gui['screenshot']):
                     errors.append("modgui screenshot file is missing")
                 if not useAbsolutePath:
@@ -964,8 +869,8 @@ def get_plugin_info(world, plugin, useAbsolutePath = True):
             else:
                 errors.append("modgui has no screnshot data")
 
-            if modgui_thumb.me is not None:
-                gui['thumbnail'] = lilv.lilv_uri_to_path(modgui_thumb.as_string())
+            if modgui_thumb is not None:
+                gui['thumbnail'] = modgui_thumb.get_path()
                 if not os.path.exists(gui['thumbnail']):
                     errors.append("modgui thumbnail file is missing")
                 if not useAbsolutePath:
@@ -974,50 +879,44 @@ def get_plugin_info(world, plugin, useAbsolutePath = True):
                 errors.append("modgui has no thumbnail data")
 
             # extra stuff, all optional
-            modgui_brand = world.find_nodes(modguigui.me, ns_modgui.brand.me, None).get_first()
-            modgui_label = world.find_nodes(modguigui.me, ns_modgui.label.me, None).get_first()
-            modgui_model = world.find_nodes(modguigui.me, ns_modgui.model.me, None).get_first()
-            modgui_panel = world.find_nodes(modguigui.me, ns_modgui.panel.me, None).get_first()
-            modgui_color = world.find_nodes(modguigui.me, ns_modgui.color.me, None).get_first()
-            modgui_knob  = world.find_nodes(modguigui.me, ns_modgui.knob .me, None).get_first()
+            modgui_brand = first_or(world.find_nodes(modguigui, ns_modgui.brand, None), None)
+            modgui_label = first_or(world.find_nodes(modguigui, ns_modgui.label, None), None)
+            modgui_model = first_or(world.find_nodes(modguigui, ns_modgui.model, None), None)
+            modgui_panel = first_or(world.find_nodes(modguigui, ns_modgui.panel, None), None)
+            modgui_color = first_or(world.find_nodes(modguigui, ns_modgui.color, None), None)
+            modgui_knob = first_or(world.find_nodes(modguigui, ns_modgui.knob , None), None)
 
-            if modgui_brand.me is not None:
-                gui['brand'] = modgui_brand.as_string()
-            if modgui_label.me is not None:
-                gui['label'] = modgui_label.as_string()
-            if modgui_model.me is not None:
-                gui['model'] = modgui_model.as_string()
-            if modgui_panel.me is not None:
-                gui['panel'] = modgui_panel.as_string()
-            if modgui_color.me is not None:
-                gui['color'] = modgui_color.as_string()
-            if modgui_knob.me is not None:
-                gui['knob'] = modgui_knob.as_string()
+            if modgui_brand is not None:
+                gui['brand'] = str(modgui_brand)
+            if modgui_label is not None:
+                gui['label'] = str(modgui_label)
+            if modgui_model is not None:
+                gui['model'] = str(modgui_model)
+            if modgui_panel is not None:
+                gui['panel'] = str(modgui_panel)
+            if modgui_color is not None:
+                gui['color'] = str(modgui_color)
+            if modgui_knob is not None:
+                gui['knob'] = str(modgui_knob)
 
             # ports
             errpr = False
             sybls = []
             ports = []
-            nodes = world.find_nodes(modguigui.me, ns_modgui.port.me, None)
-            it    = lilv.lilv_nodes_begin(nodes.me)
-            while not lilv.lilv_nodes_is_end(nodes.me, it):
-                port = lilv.lilv_nodes_get(nodes.me, it)
-                it   = lilv.lilv_nodes_next(nodes.me, it)
-                if port is None:
-                    break
-                port_indx = world.find_nodes(port, ns_lv2core.index .me, None).get_first()
-                port_symb = world.find_nodes(port, ns_lv2core.symbol.me, None).get_first()
-                port_name = world.find_nodes(port, ns_lv2core.name  .me, None).get_first()
+            for port in world.find_nodes(modguigui, ns_modgui.port, None):
+                port_indx = first_or(world.find_nodes(port, ns_lv2core.index, None), None)
+                port_symb = first_or(world.find_nodes(port, ns_lv2core.symbol, None), None)
+                port_name = first_or(world.find_nodes(port, ns_lv2core.name, None), None)
 
-                if None in (port_indx.me, port_name.me, port_symb.me):
+                if None in (port_indx, port_name, port_symb):
                     if not errpr:
                         errors.append("modgui has some invalid port data")
                         errpr = True
                     continue
 
-                port_indx = port_indx.as_int()
-                port_symb = port_symb.as_string()
-                port_name = port_name.as_string()
+                port_indx = int(port_indx)
+                port_symb = str(port_symb)
+                port_name = str(port_name)
 
                 ports.append({
                     'index' : port_indx,
@@ -1039,11 +938,6 @@ def get_plugin_info(world, plugin, useAbsolutePath = True):
                     ports2[port['index']] = port
                 gui['ports'] = [ports2[i] for i in ports2]
 
-                del ports2
-
-            # cleanup
-            del ports, nodes, it
-
     # --------------------------------------------------------------------------------------------------------
     # ports
 
@@ -1060,20 +954,20 @@ def get_plugin_info(world, plugin, useAbsolutePath = True):
     # function for filling port info
     def fill_port_info(port):
         # base data
-        portname = lilv.lilv_node_as_string(port.get_name()) or ""
+        portname = str_or(port.get_name())
 
         if not portname:
             portname = "_%i" % index
             errors.append("port with index %i has no name" % index)
 
-        portsymbol = lilv.lilv_node_as_string(port.get_symbol()) or ""
+        portsymbol = str_or(port.get_symbol())
 
         if not portsymbol:
             portsymbol = "_%i" % index
             errors.append("port with index %i has no symbol" % index)
 
         # check for duplicate names
-        if portname in portsymbols:
+        if portname in portnames:
             warnings.append("port name '%s' is not unique" % portname)
         else:
             portnames.append(portname)
@@ -1085,10 +979,7 @@ def get_plugin_info(world, plugin, useAbsolutePath = True):
             portsymbols.append(portsymbol)
 
         # short name
-        psname = lilv.lilv_nodes_get_first(port.get_value(ns_lv2core.shortName.me))
-
-        if psname is not None:
-            psname = lilv.lilv_node_as_string(psname) or ""
+        psname = str_first_or(port.get_value(ns_lv2core.shortName))
 
         if not psname:
             psname = get_short_port_name(portname)
@@ -1100,23 +991,21 @@ def get_plugin_info(world, plugin, useAbsolutePath = True):
             errors.append("port '%s' short name has more than 16 characters" % portname)
 
         # check for old style shortName
-        if port.get_value(ns_lv2core.shortname.me) is not None:
+        if first_or(port.get_value(ns_lv2core.shortname), None) is not None:
             errors.append("port '%s' short name is using old style 'shortname' instead of 'shortName'" % portname)
 
         # port types
         types = [typ.rsplit("#",1)[-1].replace("Port","",1) for typ in get_port_data(port, ns_rdf.type_)]
 
         if "Atom" in types \
-            and port.supports_event(ns_midi.MidiEvent.me) \
-            and lilv.Nodes(port.get_value(ns_atom.bufferType.me)).get_first() == ns_atom.Sequence:
+            and port.supports_event(ns_midi.MidiEvent) \
+            and str_first_or(port.get_value(ns_atom.bufferType)) == ns_atom.Sequence:
                 types.append("MIDI")
 
         #if "Morph" in types:
-            #morphtyp = lilv.lilv_nodes_get_first(port.get_value(ns_morph.supportsType.me))
-            #if morphtyp is not None:
-                #morphtyp = lilv.lilv_node_as_uri(morphtyp)
-                #if morphtyp:
-                    #types.append(morphtyp.rsplit("#",1)[-1].replace("Port","",1))
+            #morphtyp = str_first_or(port.get_value(ns_morph.supportsType))
+            #if morphtyp:
+                #types.append(morphtyp.rsplit("#",1)[-1].replace("Port","",1))
 
         # port comment
         pcomment = (get_port_data(port, ns_rdfs.comment) or [""])[0]
@@ -1146,44 +1035,46 @@ def get_plugin_info(world, plugin, useAbsolutePath = True):
             if isInteger and "CV" in types:
                 errors.append("port '%s' has integer property and CV type" % portname)
 
-            xdefault = lilv.lilv_nodes_get_first(port.get_value(ns_mod.default.me)) or \
-                       lilv.lilv_nodes_get_first(port.get_value(ns_lv2core.default.me))
-            xminimum = lilv.lilv_nodes_get_first(port.get_value(ns_mod.minimum.me)) or \
-                       lilv.lilv_nodes_get_first(port.get_value(ns_lv2core.minimum.me))
-            xmaximum = lilv.lilv_nodes_get_first(port.get_value(ns_mod.maximum.me)) or \
-                       lilv.lilv_nodes_get_first(port.get_value(ns_lv2core.maximum.me))
+            xdefault = first_or(port.get_value(ns_mod.default), first_or(port.get_value(ns_lv2core.default), None))
+            xminimum = first_or(port.get_value(ns_mod.minimum), first_or(port.get_value(ns_lv2core.minimum), None))
+            xmaximum = first_or(port.get_value(ns_mod.maximum), first_or(port.get_value(ns_lv2core.maximum), None))
 
             if xminimum is not None and xmaximum is not None:
                 if isInteger:
-                    if is_integer(lilv.lilv_node_as_string(xminimum)):
-                        ranges['minimum'] = lilv.lilv_node_as_int(xminimum)
+                    if xminimum.is_int():
+                        ranges['minimum'] = int(xminimum)
+                    elif xminimum.is_float():
+                        ranges['minimum'] = int(float(xminimum))
+                        warnings.append("port '%s' has integer property but minimum value is not an integer" % portname)
                     else:
-                        ranges['minimum'] = lilv.lilv_node_as_float(xminimum)
-                        if fmod(ranges['minimum'], 1.0) == 0.0:
-                            warnings.append("port '%s' has integer property but minimum value is float" % portname)
-                        else:
-                            errors.append("port '%s' has integer property but minimum value has non-zero decimals" % portname)
-                        ranges['minimum'] = int(ranges['minimum'])
+                        errors.append("port '%s' minimum value is not an integer or float" % portname)
 
-                    if is_integer(lilv.lilv_node_as_string(xmaximum)):
-                        ranges['maximum'] = lilv.lilv_node_as_int(xmaximum)
+                    if xmaximum.is_int():
+                        ranges['maximum'] = int(xmaximum)
+                    elif xmaximum.is_float():
+                        ranges['maximum'] = int(float(xmaximum))
+                        warnings.append("port '%s' has integer property but maximum value is not an integer" % portname)
                     else:
-                        ranges['maximum'] = lilv.lilv_node_as_float(xmaximum)
-                        if fmod(ranges['maximum'], 1.0) == 0.0:
-                            warnings.append("port '%s' has integer property but maximum value is float" % portname)
-                        else:
-                            errors.append("port '%s' has integer property but maximum value has non-zero decimals" % portname)
-                        ranges['maximum'] = int(ranges['maximum'])
+                        errors.append("port '%s' maximum value is not an integer or float" % portname)
 
                 else:
-                    ranges['minimum'] = lilv.lilv_node_as_float(xminimum)
-                    ranges['maximum'] = lilv.lilv_node_as_float(xmaximum)
+                    if xminimum.is_float():
+                        ranges['minimum'] = float(xminimum)
+                    elif xminimum.is_int():
+                        ranges['minimum'] = float(int(xminimum))
+                        warnings.append("port '%s' does not have integer property but minimum value is an integer" % portname)
+                    else:
+                        ranges['minimum'] = 0.0
+                        errors.append("port '%s' minimum value is not an integer or float" % portname)
 
-                    if is_integer(lilv.lilv_node_as_string(xminimum)):
-                        warnings.append("port '%s' minimum value is an integer" % portname)
-
-                    if is_integer(lilv.lilv_node_as_string(xmaximum)):
-                        warnings.append("port '%s' maximum value is an integer" % portname)
+                    if xmaximum.is_float():
+                        ranges['maximum'] = float(xmaximum)
+                    elif xmaximum.is_int():
+                        ranges['maximum'] = float(int(xmaximum))
+                        warnings.append("port '%s' does not have integer property but maximum value is an integer" % portname)
+                    else:
+                        ranges['maximum'] = 1.0
+                        errors.append("port '%s' maximum value is not an integer or float" % portname)
 
                 if ranges['minimum'] >= ranges['maximum']:
                     ranges['maximum'] = ranges['minimum'] + (1 if isInteger else 0.1)
@@ -1191,20 +1082,24 @@ def get_plugin_info(world, plugin, useAbsolutePath = True):
 
                 if xdefault is not None:
                     if isInteger:
-                        if is_integer(lilv.lilv_node_as_string(xdefault)):
-                            ranges['default'] = lilv.lilv_node_as_int(xdefault)
+                        if xdefault.is_int():
+                            ranges['default'] = int(xdefault)
+                        elif xdefault.is_float():
+                            ranges['default'] = int(float(xdefault))
+                            warnings.append("port '%s' has integer property but default value is not an integer" % portname)
                         else:
-                            ranges['default'] = lilv.lilv_node_as_float(xdefault)
-                            if fmod(ranges['default'], 1.0) == 0.0:
-                                warnings.append("port '%s' has integer property but default value is float" % portname)
-                            else:
-                                errors.append("port '%s' has integer property but default value has non-zero decimals" % portname)
-                            ranges['default'] = int(ranges['default'])
-                    else:
-                        ranges['default'] = lilv.lilv_node_as_float(xdefault)
+                            ranges['default'] = ranges['minimum']
+                            errors.append("port '%s' default value is not an integer or float" % portname)
 
-                        if is_integer(lilv.lilv_node_as_string(xdefault)):
-                            warnings.append("port '%s' default value is an integer" % portname)
+                    else:
+                        if xdefault.is_float():
+                            ranges['default'] = float(xdefault)
+                        elif xdefault.is_int():
+                            ranges['default'] = float(int(xdefault))
+                            warnings.append("port '%s' does not have integer property but default value is an integer" % portname)
+                        else:
+                            ranges['default'] = 0.0
+                            errors.append("port '%s' default value is not an integer or float" % portname)
 
                     testmin = ranges['minimum']
                     testmax = ranges['maximum']
@@ -1236,30 +1131,23 @@ def get_plugin_info(world, plugin, useAbsolutePath = True):
                 if "CV" not in types and designation != (PREFIX_LV2CORE + "latency"):
                     errors.append("port '%s' is missing value ranges" % portname)
 
-            nodes = port.get_scale_points()
+            scalepoint_nodes = port.get_scale_points()
 
-            if nodes is not None:
+            if scalepoint_nodes is not None:
                 scalepoints_unsorted = []
 
-                it = lilv.lilv_scale_points_begin(nodes)
-                while not lilv.lilv_scale_points_is_end(nodes, it):
-                    sp = lilv.lilv_scale_points_get(nodes, it)
-                    it = lilv.lilv_scale_points_next(nodes, it)
-
-                    if sp is None:
-                        continue
-
-                    label = lilv.lilv_scale_point_get_label(sp)
-                    value = lilv.lilv_scale_point_get_value(sp)
+                for sp in scalepoint_nodes:
+                    label = sp.get_label()
+                    value = sp.get_value()
 
                     if label is None:
                         errors.append("a port scalepoint is missing its label")
                         continue
 
-                    label = lilv.lilv_node_as_string(label) or ""
+                    label = str(label)
 
                     if not label:
-                        errors.append("a port scalepoint is missing its label")
+                        errors.append("a port scalepoint label is empty")
                         continue
 
                     if value is None:
@@ -1267,19 +1155,24 @@ def get_plugin_info(world, plugin, useAbsolutePath = True):
                         continue
 
                     if isInteger:
-                        if is_integer(lilv.lilv_node_as_string(value)):
-                            value = lilv.lilv_node_as_int(value)
-                        else:
-                            value = lilv.lilv_node_as_float(value)
-                            if fmod(value, 1.0) == 0.0:
-                                warnings.append("port '%s' has integer property but scalepoint '%s' value is float" % (portname, label))
-                            else:
-                                errors.append("port '%s' has integer property but scalepoint '%s' value has non-zero decimals" % (portname, label))
+                        if value.is_int():
                             value = int(value)
+                        elif value.is_float():
+                            value = float(value)
+                            warnings.append("port '%s' scalepoint '%s' value is not an integer" % (portname, label))
+                        else:
+                            value = ranges['minimum']
+                            warnings.append("port '%s' scalepoint '%s' value is not an integer or float" % (portname, label))
+
                     else:
-                        if is_integer(lilv.lilv_node_as_string(value)):
+                        if value.is_int():
+                            value = int(value)
                             warnings.append("port '%s' scalepoint '%s' value is an integer" % (portname, label))
-                        value = lilv.lilv_node_as_float(value)
+                        elif value.is_float():
+                            value = float(value)
+                        else:
+                            value = ranges['minimum']
+                            warnings.append("port '%s' scalepoint '%s' value is not an integer or float" % (portname, label))
 
                     if ranges['minimum'] <= value <= ranges['maximum']:
                         scalepoints_unsorted.append((value, label))
@@ -1292,9 +1185,6 @@ def get_plugin_info(world, plugin, useAbsolutePath = True):
                     values   = list(v for v, l in scalepoints_unsorted)
                     values.sort()
                     scalepoints = list({ 'value': v, 'label': unsorted[v] } for v in values)
-                    del unsorted, values
-
-                del scalepoints_unsorted
 
             if "enumeration" in properties and len(scalepoints) <= 1:
                 errors.append("port '%s' wants to use enumeration but doesn't have enough values" % portname)
@@ -1303,10 +1193,10 @@ def get_plugin_info(world, plugin, useAbsolutePath = True):
         # control ports might contain unit
         if "Control" in types:
             # unit
-            uunit = lilv.lilv_nodes_get_first(port.get_value(ns_units.unit.me))
+            uunit = first_or(port.get_value(ns_units.unit), None)
 
             if uunit is not None:
-                uuri = lilv.lilv_node_as_uri(uunit)
+                uuri = str(uunit)
 
                 # using pre-existing lv2 unit
                 if uuri is not None and uuri.startswith("http://lv2plug.in/ns/"):
@@ -1328,22 +1218,22 @@ def get_plugin_info(world, plugin, useAbsolutePath = True):
 
                 # using custom unit
                 else:
-                    xlabel  = world.find_nodes(uunit, ns_rdfs  .label.me, None).get_first()
-                    xrender = world.find_nodes(uunit, ns_units.render.me, None).get_first()
-                    xsymbol = world.find_nodes(uunit, ns_units.symbol.me, None).get_first()
+                    xlabel = first_or(world.find_nodes(uunit, ns_rdfs.label, None), None)
+                    xrender = first_or(world.find_nodes(uunit, ns_units.render, None), None)
+                    xsymbol = first_or(world.find_nodes(uunit, ns_units.symbol, None), None)
 
-                    if xlabel.me is not None:
-                        ulabel = xlabel.as_string()
+                    if xlabel is not None:
+                        ulabel = str(xlabel)
                     else:
                         errors.append("port '%s' has custom unit with no label" % portname)
 
-                    if xrender.me is not None:
-                        urender = xrender.as_string()
+                    if xrender is not None:
+                        urender = str(xrender)
                     else:
                         errors.append("port '%s' has custom unit with no render" % portname)
 
-                    if xsymbol.me is not None:
-                        usymbol = xsymbol.as_string()
+                    if xsymbol is not None:
+                        usymbol = str(xsymbol)
                     else:
                         errors.append("port '%s' has custom unit with no symbol" % portname)
 
@@ -1382,10 +1272,10 @@ def get_plugin_info(world, plugin, useAbsolutePath = True):
     # presets
 
     def get_preset_data(preset):
-        world.load_resource(preset.me)
+        world.load_resource(preset)
 
-        uri   = preset.as_string() or ""
-        label = world.find_nodes(preset.me, ns_rdfs.label.me, None).get_first().as_string() or ""
+        uri   = str_or(preset)
+        label = str_first_or(world.find_nodes(preset, ns_rdfs.label, None))
 
         if not uri:
             errors.append("preset with label '%s' has no uri" % (label or "<unknown>"))
@@ -1396,8 +1286,7 @@ def get_plugin_info(world, plugin, useAbsolutePath = True):
 
     presets = []
 
-    presets_related = plugin.get_related(ns_pset.Preset)
-    presets_data    = list(LILV_FOREACH(presets_related, get_preset_data))
+    presets_data = tuple(get_preset_data(p) for p in plugin.get_related(ns_pset.Preset))
 
     if len(presets_data) != 0:
         unsorted = dict(p for p in presets_data)
@@ -1405,8 +1294,6 @@ def get_plugin_info(world, plugin, useAbsolutePath = True):
         uris.sort()
         presets  = list({ 'uri': p, 'label': unsorted[p] } for p in uris)
         del unsorted, uris
-
-    del presets_related
 
     # --------------------------------------------------------------------------------------------------------
     # done
@@ -1464,9 +1351,8 @@ def get_plugins_info(bundles):
     world = lilv.World()
 
     # this is needed when loading specific bundles instead of load_all
-    # (these functions are not exposed via World yet)
-    lilv.lilv_world_load_specifications(world.me)
-    lilv.lilv_world_load_plugin_classes(world.me)
+    world.load_specifications()
+    world.load_plugin_classes()
 
     # load all bundles
     for bundle in bundles:
@@ -1476,19 +1362,16 @@ def get_plugins_info(bundles):
             bundle += os.sep
 
         # convert bundle string into a lilv node
-        bundlenode = lilv.lilv_new_file_uri(world.me, None, bundle)
+        bundlenode = world.new_file_uri(None, bundle)
 
         # load the bundle
         world.load_bundle(bundlenode)
-
-        # free bundlenode, no longer needed
-        lilv.lilv_node_free(bundlenode)
 
     # get all plugins available in the selected bundles
     plugins = world.get_all_plugins()
 
     # make sure the bundles include something
-    if plugins.size() == 0:
+    if len(plugins) == 0:
         raise Exception('get_plugins_info() - selected bundles have no plugins')
 
     # return all the info
