@@ -686,12 +686,12 @@ def get_plugin_info(world, plugin, useAbsolutePath = True):
     if not brand:
         brand = author['name'].split(" - ",1)[0].split(" ",1)[0]
         brand = brand.rstrip(",").rstrip(";")
-        if len(brand) > 11:
-            brand = brand[:11]
+        if len(brand) > 16:
+            brand = brand[:16]
         warnings.append("plugin brand is missing")
 
-    elif len(brand) > 11:
-        brand = brand[:11]
+    elif len(brand) > 16:
+        brand = brand[:16]
         errors.append("plugin brand has more than 11 characters")
 
     # --------------------------------------------------------------------------------------------------------
@@ -700,7 +700,7 @@ def get_plugin_info(world, plugin, useAbsolutePath = True):
     label = str_first_or(plugin.get_value(ns_mod.label))
 
     if not label:
-        if len(name) <= 16:
+        if len(name) <= 24:
             label = name
         else:
             labels = name.split(" - ",1)[0].split(" ")
@@ -709,13 +709,13 @@ def get_plugin_info(world, plugin, useAbsolutePath = True):
             else:
                 label = labels[0]
 
-            if len(label) > 16:
-                label = label[:16]
+            if len(label) > 24:
+                label = label[:24]
 
             warnings.append("plugin label is missing")
 
-    elif len(label) > 16:
-        label = label[:16]
+    elif len(label) > 24:
+        label = label[:24]
         errors.append("plugin label has more than 16 characters")
 
     # --------------------------------------------------------------------------------------------------------
