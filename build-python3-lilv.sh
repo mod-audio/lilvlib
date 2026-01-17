@@ -11,47 +11,52 @@ cd "$(dirname ${0})"
 
 if (which debuild > /dev/null); then true; else
   echo "debuild not found, please install it"
-  exit
+  exit 1
 fi
 
 if (which git > /dev/null); then true; else
   echo "git not found, please install it"
-  exit
+  exit 1
 fi
 
 if (which meson > /dev/null); then true; else
   echo "meson not found, please install it"
-  exit
+  exit 1
 fi
 
 if (which pkg-config > /dev/null); then true; else
   echo "pkg-config not found, please install it"
-  exit
+  exit 1
 fi
 
 if (which python3 > /dev/null); then true; else
   echo "python3 not found, please install it"
-  exit
+  exit 1
 fi
 
 if (dpkg -l | grep debhelper > /dev/null); then true; else
   echo "debhelper not installed, please install it"
-  exit
+  exit 1
 fi
 
 if (dpkg -l | grep dpkg-dev > /dev/null); then true; else
   echo "dpkg-dev not installed, please install it"
-  exit
+  exit 1
 fi
 
 if (dpkg -l | grep python3-all-dev > /dev/null); then true; else
   echo "python3-all-dev not installed, please install it"
-  exit
+  exit 1
 fi
 
 if (pkg-config --exists libpcre); then true; else
   echo "libpcre-dev not installed, please install it"
-  exit
+  exit 1
+fi
+
+if [ "$(meson -v)" = "0.61.2" ]; then
+  echo "Using old incompatible meson version, please update first"
+  exit 1
 fi
 
 # ---------------------------------------------------------------------------------------------------------------------
