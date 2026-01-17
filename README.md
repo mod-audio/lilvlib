@@ -2,7 +2,7 @@
 
 This repository contains a build script for lilvlib and its python3-lilv dependency, using the latest development version from git.
 
-The reason why you need this script is because most distros have an outdated lilv binary, don't build lilv python modules or build the python2 modules instead of our required python3 version.
+The reason why you need this script is because most distros have an outdated lilv binary or don't build lilv python modules.
 
 To start simply run:
 
@@ -15,12 +15,13 @@ The generated package will contain `python3-lilv` and also everything needed for
 This includes:
 
 - LV2 headers and definitions
-- MOD-SDK LV2 definitions
+- Dargklass LV2 definitions
 - KXStudio LV2 definitions
+- MOD Audio LV2 definitions
 - sord_validate (static binary)
-- sord_validate_mod
+- lv2_validate_mod
 
-The `sord_validate_mod` is a helper script that runs `sord_validate` with the correct bundles.
+The `lv2_validate_mod` is a helper script that runs `lv2_validate` with extra Darkglass, KXStudio and MOD Audio related bundles.
 
 Because this package uses the definitions copied during build (in `/opt`), it does not depend on any external resources.
 
@@ -35,13 +36,15 @@ Install
 dpkg -i python3-lilv_0.22.1+git20170620_amd64.deb
 ```
 
+## Testing
+
 Use
 
 ```bash
 /usr/bin/python3
 ```
 
-```python 
+```python
 import lilvlib
 lilvlib.get_plugin_info_helper('')
 ```

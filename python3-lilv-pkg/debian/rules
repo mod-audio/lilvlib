@@ -1,47 +1,4 @@
 #!/usr/bin/make -f
 
-export TMP_PREFIX=/tmp/python3-lilv-build/system
-
-export CFLAGS=-I$(TMP_PREFIX)/include
-export CXXFLAGS=-I$(TMP_PREFIX)/include
-export LDFLAGS=-L$(TMP_PREFIX)/lib -ldl -lm
-export PKG_CONFIG_PATH=$(TMP_PREFIX)/lib/pkgconfig
-
-WAF = python3 ./waf
-
-override_dh_auto_configure:
-	$(WAF) configure \
-		--static \
-		--static-progs \
-		--no-shared \
-		--no-utils \
-		--no-bash-completion \
-		--prefix=/usr \
-		--bindings
-
-override_dh_auto_build:
-	$(WAF) -j 1
-
-override_dh_auto_clean:
-	$(WAF) clean || true
-	find -name "*.pyc" -delete
-	rm -rf build .waf* .lock-waf_linux2_build .lock-waf_linux_build
-	dh_auto_clean
-
-override_dh_auto_install:
-	$(WAF) install --destdir=$(CURDIR)/debian/tmp
-	
-	install -d $(CURDIR)/debian/tmp/usr/bin
-	install -m 755 $(CURDIR)/../sord_validate_mod $(CURDIR)/debian/tmp/usr/bin
-
-	install -d $(CURDIR)/debian/tmp/opt/mod/bin
-	install -m 755 $(TMP_PREFIX)/bin/sord_validate $(CURDIR)/debian/tmp/opt/mod/bin
-
-	install -d $(CURDIR)/debian/tmp/opt/mod/lib/lv2
-	cp -r $(TMP_PREFIX)/lib/lv2/* $(CURDIR)/debian/tmp/opt/mod/lib/lv2
-
-override_dh_strip:
-	# skip
-
 %:
 	dh $@

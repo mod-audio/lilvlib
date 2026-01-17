@@ -1,11 +1,13 @@
---- lv2-1.12.1+git20151117.orig/lv2/lv2plug.in/ns/lv2core/lv2core.ttl
-+++ lv2-1.12.1+git20151117/lv2/lv2plug.in/ns/lv2core/lv2core.ttl
-@@ -139,7 +139,7 @@ hosts and other tools already <q>underst
+diff --git a/lv2/core.lv2/lv2core.ttl b/lv2/core.lv2/lv2core.ttl
+index c7dcf50..dfdc31b 100644
+--- a/lv2/core.lv2/lv2core.ttl
++++ b/lv2/core.lv2/lv2core.ttl
+@@ -42,7 +42,7 @@ lv2:PluginBase
  lv2:Plugin
  	a rdfs:Class ,
  		owl:Class ;
 -	rdfs:subClassOf lv2:PluginBase ;
 +	rdfs:subClassOf lv2:PluginBase , doap:Project ;
  	rdfs:label "Plugin" ;
+ 	rdfs:comment "An LV2 plugin." ;
  	rdfs:subClassOf [
- 		a owl:Restriction ;

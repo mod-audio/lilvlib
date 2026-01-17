@@ -1,25 +1,18 @@
 Source: python3-lilv
 Section: libs
 Priority: optional
-Maintainer: Debian Multimedia Maintainers <pkg-multimedia-maintainers@lists.alioth.debian.org>
-Uploaders:
- Alessio Treglia <alessio@debian.org>,
- Jaromír Mikeš <mira.mikes@seznam.cz>
-Build-Depends:
- debhelper (>= 8),
- pkg-config,
- python3-all-dev,
- python3-numpy,
- swig
-Standards-Version: 3.9.3
-Homepage: http://drobilla.net/software/lilv/
-Vcs-Git: git://anonscm.debian.org/pkg-multimedia/lilv.git
-Vcs-Browser: http://anonscm.debian.org/gitweb/?p=pkg-multimedia/lilv.git
+Maintainer: falkTX <falktx@falktx.com>
+Build-Depends: debhelper-compat (= 13),
+  meson,
+  pkg-config,
+  python3-all-dev
+Standards-Version: 4.5.0
+Rules-Requires-Root: no
 
 Package: python3-lilv
 Section: python
 Architecture: any
-Depends: ${misc:Depends}, ${shlibs:Depends}, python3-numpy
+Depends: ${misc:Depends}, ${shlibs:Depends}
 Description: library for simple use of LV2 plugins (runtime files)
  Lilv (formerly SLV2) is a library for LV2 hosts intended to make using
  LV2 Plugins as simple as possible (without sacrificing capabilities).
