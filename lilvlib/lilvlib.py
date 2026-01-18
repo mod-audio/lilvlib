@@ -1379,12 +1379,10 @@ def get_plugins_info(bundles):
 
 # ------------------------------------------------------------------------------------------------------------
 
-if __name__ == '__main__':
-    from sys import argv, exit
+def main():
+    from sys import argv
     from pprint import pprint
-    #get_plugins_info(argv[1:])
-    #for i in get_plugins_info(argv[1:]): pprint(i)
-    #exit(0)
+
     for i in get_plugins_info(argv[1:]):
         warnings = i['warnings'].copy()
 
@@ -1406,5 +1404,10 @@ if __name__ == '__main__':
             'errors'  : i['errors'],
             'warnings': i['warnings']
         }, width=200)
+
+# ------------------------------------------------------------------------------------------------------------
+
+if __name__ == '__main__':
+    main()
 
 # ------------------------------------------------------------------------------------------------------------

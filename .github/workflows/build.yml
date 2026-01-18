@@ -1,0 +1,39 @@
+name: Build and Test
+
+on: [push, pull_request]
+
+env:
+  DEBIAN_FRONTEND: noninteractive
+  DIST_DIR: dist
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: ubuntu:22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          apt-get update -qq
+          apt-get install -yqq --no-install-recommends \
+            ca-certificates curl git \
+            debhelper devscripts dpkg-dev meson pkg-config \
+            python3-all-dev python3-pip python3-setuptools python3-wheel \
+            libpcre3-dev
+          curl -sLO https://launchpad.net/~kxstudio-debian/+archive/ubuntu/toolchain/+files/meson_1.9.1-1kxstudio2_all.deb
+          dpkg -i meson_1.9.1-1kxstudio2_all.deb
+
+      - name: Build
+        run: ./scripts/build.sh
+
+      - name: Test
+        run: ./scripts/test.sh
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: lilvlib-packages
+          path: dist/
+          retention-days: 30
