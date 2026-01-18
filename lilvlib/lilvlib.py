@@ -692,7 +692,7 @@ def get_plugin_info(world, plugin, useAbsolutePath = True):
 
     elif len(brand) > 16:
         brand = brand[:16]
-        errors.append("plugin brand has more than 11 characters")
+        errors.append("plugin brand has more than 16 characters")
 
     # --------------------------------------------------------------------------------------------------------
     # label
@@ -716,7 +716,7 @@ def get_plugin_info(world, plugin, useAbsolutePath = True):
 
     elif len(label) > 24:
         label = label[:24]
-        errors.append("plugin label has more than 16 characters")
+        errors.append("plugin label has more than 24 characters")
 
     # --------------------------------------------------------------------------------------------------------
     # bundles
