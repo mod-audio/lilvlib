@@ -12,7 +12,7 @@ source "$VENV_DIR/bin/activate"
 pip install --upgrade pip
 
 echo "==> Installing debian package..."
-apt-get install -yqq --no-install-recommends "$DIST_DIR"/python3-lilv_*.deb
+dpkg -i "$DIST_DIR"/python3-lilv_*.deb
 
 echo "==> Installing wheel..."
 pip install "$DIST_DIR"/mod_lilvlib-*.whl
