@@ -20,7 +20,7 @@ jobs:
           apt-get install -yqq --no-install-recommends \
             ca-certificates curl git \
             debhelper devscripts dpkg-dev meson pkg-config \
-            python3-all-dev python3-pip python3-setuptools python3-wheel \
+            python3-all-dev python3-pip python3-setuptools python3-venv python3-wheel \
             libpcre3-dev
           curl -sLO https://launchpad.net/~kxstudio-debian/+archive/ubuntu/toolchain/+files/meson_1.9.1-1kxstudio2_all.deb
           dpkg -i meson_1.9.1-1kxstudio2_all.deb
