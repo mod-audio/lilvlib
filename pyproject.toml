@@ -7,13 +7,13 @@ name = "mod-lilvlib"
 version = "1.1.0"
 description = "A set of helper methods to extract plugin and pedalboard data from TTLs using lilv"
 readme = "README.md"
-license = {text = "MIT"}
+license = {text = "ISC"}
 authors = [
-    { name = "Falktx", email = "falktx@mod.audio" }
+    { name = "falkTX", email = "falktx@mod.audio" }
 ]
 classifiers = [
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
+    "License :: OSI Approved :: ISC License",
     "Natural Language :: English",
     "Operating System :: OS Independent",
     "Programming Language :: Python",
