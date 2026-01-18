@@ -6,22 +6,22 @@ LV2DIR=${PREFIX}/lib/lv2
 # don't check all lv2 bundles, if atom.lv2 is installed the others should be too
 if [ ! -d ${LV2DIR}/atom.lv2 ]; then
   echo "${LV2DIR}/atom.lv2 directory is missing"
-  exit
+  exit 1
 fi
 
 if [ ! -d ${LV2DIR}/dg-properties.lv2 ]; then
   echo "${LV2DIR}/dg-properties.lv2 directory is missing"
-  exit
+  exit 1
 fi
 
 if [ ! -d ${LV2DIR}/kx-properties.lv2 ]; then
   echo "${LV2DIR}/kx-properties.lv2 directory is missing"
-  exit
+  exit 1
 fi
 
 if [ ! -d ${LV2DIR}/mod-license.lv2 ]; then
   echo "${LV2DIR}/mod-license.lv2 directory is missing"
-  exit
+  exit 1
 fi
 
 if [ -z "${1}" ]; then
