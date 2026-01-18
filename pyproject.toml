@@ -1,0 +1,34 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mod-lilvlib"
+version = "1.1.0"
+description = "A set of helper methods to extract plugin and pedalboard data from TTLs using lilv"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [
+    { name = "Falktx", email = "falktx@mod.audio" }
+]
+classifiers = [
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Natural Language :: English",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+
+[project.urls]
+Homepage = "https://github.com/mod-audio/lilvlib"
+Repository = "https://github.com/mod-audio/lilvlib"
+
+[project.scripts]
+lilvlib = "lilvlib.lilvlib:main"
+
+[tool.setuptools.packages.find]
+include = ["lilvlib*"]

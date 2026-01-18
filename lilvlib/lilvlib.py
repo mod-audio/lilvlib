@@ -692,7 +692,7 @@ def get_plugin_info(world, plugin, useAbsolutePath = True):
 
     elif len(brand) > 16:
         brand = brand[:16]
-        errors.append("plugin brand has more than 11 characters")
+        errors.append("plugin brand has more than 16 characters")
 
     # --------------------------------------------------------------------------------------------------------
     # label
@@ -716,7 +716,7 @@ def get_plugin_info(world, plugin, useAbsolutePath = True):
 
     elif len(label) > 24:
         label = label[:24]
-        errors.append("plugin label has more than 16 characters")
+        errors.append("plugin label has more than 24 characters")
 
     # --------------------------------------------------------------------------------------------------------
     # bundles
@@ -1379,12 +1379,10 @@ def get_plugins_info(bundles):
 
 # ------------------------------------------------------------------------------------------------------------
 
-if __name__ == '__main__':
-    from sys import argv, exit
+def main():
+    from sys import argv
     from pprint import pprint
-    #get_plugins_info(argv[1:])
-    #for i in get_plugins_info(argv[1:]): pprint(i)
-    #exit(0)
+
     for i in get_plugins_info(argv[1:]):
         warnings = i['warnings'].copy()
 
@@ -1406,5 +1404,10 @@ if __name__ == '__main__':
             'errors'  : i['errors'],
             'warnings': i['warnings']
         }, width=200)
+
+# ------------------------------------------------------------------------------------------------------------
+
+if __name__ == '__main__':
+    main()
 
 # ------------------------------------------------------------------------------------------------------------
