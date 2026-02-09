@@ -10,7 +10,7 @@ cd "$(dirname ${0})"
 # sudo apt-get install --no-install-recommends debhelper devscripts dpkg-dev git meson pkg-config python3-all-dev subversion libpcre3-dev
 
 if (which debuild > /dev/null); then true; else
-  echo "debuild not found, please install it"
+  echo "debuild not found, please install devscripts"
   exit 1
 fi
 
@@ -41,11 +41,6 @@ fi
 
 if (dpkg -l | grep dpkg-dev > /dev/null); then true; else
   echo "dpkg-dev not installed, please install it"
-  exit 1
-fi
-
-if (dpkg -l | grep python3-all-dev > /dev/null); then true; else
-  echo "python3-all-dev not installed, please install it"
   exit 1
 fi
 
