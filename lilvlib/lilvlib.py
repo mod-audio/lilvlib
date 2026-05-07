@@ -55,6 +55,15 @@ def str_first_or(nodes):
 def str_or(node):
     return str(node) if node is not None else ""
 
+def iter_compat(value, conv = str):
+    data  = []
+    viter = iter(value)
+    value = next(viter, None)
+    while value is not None:
+        data.append(conv(value))
+        value = next(viter, None)
+    return data
+
 def get_short_port_name(portName):
     if len(portName) <= 16:
         return portName
@@ -164,7 +173,7 @@ def get_category(nodes):
     return categories
 
 def get_port_data(port, subj):
-    return [str(node) for node in port.get_value(subj)]
+    return iter_compat(port.get_value(subj))
 
 def get_port_unit(miniuri):
   # using label, render, symbol
@@ -578,7 +587,7 @@ def get_plugin_info(world, plugin, useAbsolutePath = True):
     # --------------------------------------------------------------------------------------------------------
     # license
 
-    licenses = tuple(str(node) for node in plugin.get_value(ns_doap.license))
+    licenses = iter_compat(plugin.get_value(ns_doap.license))
 
     if len(licenses) > 0:
         license = sorted(licenses)[0]
@@ -1286,7 +1295,7 @@ def get_plugin_info(world, plugin, useAbsolutePath = True):
 
     presets = []
 
-    presets_data = tuple(get_preset_data(p) for p in plugin.get_related(ns_pset.Preset))
+    presets_data = iter_compat(plugin.get_related(ns_pset.Preset), get_preset_data)
 
     if len(presets_data) != 0:
         unsorted = dict(p for p in presets_data)
